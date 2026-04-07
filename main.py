@@ -127,34 +127,23 @@ def main():
             # Eventos unicamente activos si estamos vivos
             if player.alive:
                 if game_state == "MAP":
-                    if event.type == pygame.KEYDOWN:
-                        dx, dy = 0, 0
-                        if event.key in [pygame.K_w, pygame.K_UP]: dy = -1
-                        elif event.key in [pygame.K_s, pygame.K_DOWN]: dy = 1
-                        elif event.key in [pygame.K_a, pygame.K_LEFT]: dx = -1
-                        elif event.key in [pygame.K_d, pygame.K_RIGHT]: dx = 1
-                        
-                        if dx != 0 or dy != 0:
-                            nx, ny = world.player_x + dx, world.player_y + dy
-                            if 0 <= nx < world.grid_size and 0 <= ny < world.grid_size:
-                                world.player_x, world.player_y = nx, ny
-                                cell = world.grid[ny][nx]
-                                cost_e = 4 if cell["type"] == "Agua" else 2
-                                pas_msg = player.pass_turn({"hunger": 1, "thirst": 1, "energy": cost_e})
-                                current_message = f"Te mueves a: {cell['type']}. Energía -{cost_e}. {pas_msg}"
-                                turn_taken = True
-                    
                     if btn_search.handle_event(event):
+                        # Avance procedural orgánico en vez de tecla WASD
+                        choices = [(0,-1), (0,1), (-1,0), (1,0)]
+                        dx, dy = random.choice(choices)
+                        nx = max(0, min(world.grid_size-1, world.player_x + dx))
+                        ny = max(0, min(world.grid_size-1, world.player_y + dy))
+                        world.player_x, world.player_y = nx, ny
                         cell = world.grid[world.player_y][world.player_x]
-                        if cell["searched"]:
-                            current_message = "Ya te encuentras en un área explorada. ¡Debes moverte (WASD)!"
-                        else:
-                            cell["searched"] = True
-                            pas_msg = player.search()
-                            if cell["special"] == "Mineral": evt = {"type": "mineral", "data": {"name": "Yacimiento expuesto", "tool_req": "Pico de Hueso", "item": "Piedra", "amt": 5}}
-                            elif cell["special"] == "Planta": evt = {"type": "resource", "data": {"name": "Flora expuesta", "amount": 20, "stat": "hunger", "item": "Fibra", "item_amt": 2, "herb": "Ajenjo", "herb_amt": 1}}
-                            elif cell["special"] == "Enemigo Fuerte": evt = {"type": "enemy", "data": {"name": "Guardián de Zona", "dmg": 30, "hp": 55, "drops": {"Huesos": (1,2)}}}
-                            else: evt = world.generate_search_event()
+                        
+                        cell["searched"] = True
+                        pas_msg = player.search()
+                        if cell["type"] == "Agua": player.consume_energy(4) # extra penalidad
+                        
+                        if cell["special"] == "Mineral": evt = {"type": "mineral", "data": {"name": "Yacimiento expuesto", "tool_req": "Pico de Hueso", "item": "Piedra", "amt": 5}}
+                        elif cell["special"] == "Planta": evt = {"type": "resource", "data": {"name": "Flora expuesta", "amount": 20, "stat": "hunger", "item": "Fibra", "item_amt": 2, "herb": "Ajenjo", "herb_amt": 1}}
+                        elif cell["special"] == "Enemigo Fuerte": evt = {"type": "enemy", "data": {"name": "Guardián de Zona", "dmg": 30, "hp": 55, "drops": {"Huesos": (1,2)}}}
+                        else: evt = world.generate_search_event()
                         if evt["type"] == "nothing":
                             current_message = "Buscaste exhaustivamente pero no encontraste nada útil."
                         elif evt["type"] == "resource":
@@ -562,7 +551,7 @@ def main():
         
         # Superposición de la matriz minimapa
         if game_state in ["MAP", "ENCOUNTER", "DECISION", "OPPORTUNITY"]:
-            draw_minimap(screen, world, player, font_main, font_small, 400 + shake_offset_x, 100 + shake_offset_y, 300)
+            draw_minimap(screen, world, player, font_main, font_small, 40 + shake_offset_x, 120 + shake_offset_y, 250)
 
         # Renderizado de Textos Principales y Localizacion
         title_surf = font_title.render(f"Gen {player.generation} - {player.evolution_stage} [ERA {world.era}]", True, TEXT_COLOR)
