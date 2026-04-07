@@ -267,74 +267,81 @@ def draw_cave_art(surface, ancestral_art):
             pygame.draw.circle(surface, art_color, (sw-130, sh-100), 8, 2)
 
 def draw_character_profile(surface, player, x, y):
-    # Boceto anatómico de estilo enciclopédico
-    body_color = (19, 30, 45) # Tinta carbón oscura
-    sketch_color = (60, 70, 90, 150) # Tinta diluida para guía
+    # Estilo "Pixel Art" (Sello de Tinta)
+    ink_color = (25, 30, 45) # Tinta carbón
+    px = 6 # Tamaño de cada bloque de píxel
     
-    # Proporciones según Era
+    # Mascara de bits para las siluetas (1 = Tinta, 0 = Vacío)
     if player.era == 1:
-        # Neandertal: Cabeza grande, tronco ancho, piernas cortas
-        head_r = 14
-        trunk_w, trunk_h = 45, 60
-        leg_h = 45
-        posture_y = 10
+        # Silueta Neandertal (Robusto)
+        mask = [
+            "  XXXX  ",
+            " XXXXXX ",
+            " XXXXXX ",
+            "  XXXX  ",
+            " XXXXXXX",
+            "XXXXXXXX",
+            "XXXXXXXX",
+            " XXXXXX ",
+            "  XX XX ",
+            "  XX XX "
+        ]
+        offset_x = 0
     else:
-        # Sapiens: Más estilizado, recto
-        head_r = 11
-        trunk_w, trunk_h = 35, 75
-        leg_h = 55
-        posture_y = 0
+        # Silueta Sapiens (Estilizado)
+        mask = [
+            "   XX   ",
+            "  XXXX  ",
+            "   XX   ",
+            "   XX   ",
+            "  XXXX  ",
+            "  XXXX  ",
+            "  XXXX  ",
+            "   XX   ",
+            "   XX   ",
+            "  X  X  ",
+            "  X  X  ",
+            "  X  X  "
+        ]
+        offset_x = 10
 
-    # 1. Dibujar Tronco (Volumen)
-    chest_rect = pygame.Rect(x + 40 - trunk_w//2, y + 45 + posture_y, trunk_w, trunk_h)
-    pygame.draw.ellipse(surface, body_color, chest_rect, 2)
-    # Sombreado Cross-hatch en el pecho
-    for i in range(5):
-        pygame.draw.line(surface, body_color, (chest_rect.left + i*8, chest_rect.top), (chest_rect.left + i*8 + 5, chest_rect.top + 10), 1)
+    # Renderizado de la máscara con "Bleed" (sangrado de tinta)
+    import random
+    for r_idx, row in enumerate(mask):
+        for c_idx, char in enumerate(row):
+            if char == "X":
+                # Jitter leve para simular sello de madera/tinta
+                jitter_x = random.randint(-1, 1)
+                jitter_y = random.randint(-1, 1)
+                pygame.draw.rect(surface, ink_color, (x + offset_x + c_idx*px + jitter_x, y + r_idx*px + jitter_y, px, px))
 
-    # 2. Cabeza (Estudio anatómico)
-    head_pos = (x + 40, y + 25 + posture_y)
-    pygame.draw.circle(surface, body_color, head_pos, head_r, 2)
-    if player.era == 1:
-        # Arco superciliar prominente
-        pygame.draw.line(surface, body_color, (head_pos[0]-head_r, head_pos[1]), (head_pos[0]+head_r, head_pos[1]), 1)
-
-    # 3. Extremidades (Poligonales para grosor)
-    # Brazo Izquierdo (Sujetando arma)
-    arm_pts = [(x+40-trunk_w//2, y+55+posture_y), (x+15, y+80), (x+20, y+85), (x+40-trunk_w//2+5, y+60+posture_y)]
-    pygame.draw.polygon(surface, body_color, arm_pts, 1)
-    
-    # Piernas
-    pygame.draw.line(surface, body_color, (x+40-10, y+45+trunk_h+posture_y), (x+30, y+45+trunk_h+leg_h+posture_y), 2)
-    pygame.draw.line(surface, body_color, (x+40+10, y+45+trunk_h+posture_y), (x+50, y+45+trunk_h+leg_h+posture_y), 2)
-
-    # Equipo Visible (Ajustado a la nueva anatomía)
+    # Equipo en estilo Píxel
     weapon = player.equipment.get("Weapon")
     if weapon and weapon != "Puños":
-        color_w = (25, 30, 45) if "Obsidiana" in weapon else (110, 80, 50)
-        # La mano está aprox en (x+15, y+80)
-        pygame.draw.line(surface, color_w, (x+15, y+65), (x+10, y+120), 3) # Mango
-        tip_color = (20, 20, 20) if "Obsidiana" in weapon else (210, 210, 200)
-        pygame.draw.polygon(surface, tip_color, [(x+15, y+55), (x+7, y+75), (x+23, y+75)], 0)
+        w_color = (15, 20, 30) if "Obsidiana" in weapon else (100, 70, 40)
+        # Dibujar lanza pixelada
+        for i in range(12):
+            pygame.draw.rect(surface, w_color, (x + offset_x - 5, y + 20 + i*px, px, px))
+        # Punta lanza
+        tip_c = (10, 10, 15) if "Obsidiana" in weapon else (180, 180, 160)
+        pygame.draw.rect(surface, tip_c, (x + offset_x - 5, y + 15, px, px))
+        pygame.draw.rect(surface, tip_c, (x + offset_x - 8, y + 20, px*2, px))
 
     body_gear = player.equipment.get("Body")
     if body_gear and body_gear != "Nada":
-        gear_rect = chest_rect.inflate(4, 4)
-        pygame.draw.rect(surface, (100, 75, 55), gear_rect, 1)
+        # Túnica de bloques
+        pygame.draw.rect(surface, (120, 100, 80), (x + offset_x + px, y + 4*px, 6*px, 6*px), 1)
         if "Escamoso" in body_gear:
-            for i in range(trunk_h // 12):
-                pygame.draw.arc(surface, (80, 100, 80), [gear_rect.x, gear_rect.y + i*12, trunk_w, 15], 3.14, 0, 2)
-        elif "Invierno" in body_gear:
-            pygame.draw.rect(surface, (130, 120, 110), gear_rect.inflate(6, 6), 2)
+            pygame.draw.rect(surface, (80, 110, 80), (x + offset_x + 2*px, y + 5*px, 4*px, 4*px), 0)
 
     head_gear = player.equipment.get("Head")
     if head_gear == "Casco de Hueso":
-        pygame.draw.arc(surface, (235, 235, 230), [head_pos[0]-head_r-2, head_pos[1]-head_r-2, head_r*2+4, head_r*2+4], 0, 3.14, 3)
+        pygame.draw.rect(surface, (230, 230, 220), (x + offset_x + 2*px, y - px, 4*px, 2*px))
 
-    # Heridas de Tinta Roja
+    # Heridas de Tinta Roja (Píxel)
     if player.hp < player.max_hp * 0.5:
-        for i in range(3):
-            pygame.draw.line(surface, (160, 40, 40), (chest_rect.centerx-10, chest_rect.centery+i*5), (chest_rect.centerx+10, chest_rect.centery+i*5+3), 2)
+        pygame.draw.rect(surface, (180, 30, 30), (x + offset_x + 3*px, y + 5*px, px, px))
+        pygame.draw.rect(surface, (180, 30, 30), (x + offset_x + 5*px, y + 7*px, px, px))
 
 def draw_blood_splatters(surface, blood_intensity, turn_seed):
     import random
