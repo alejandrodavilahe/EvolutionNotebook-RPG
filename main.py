@@ -128,22 +128,21 @@ def main():
     current_message = f"Te encuentras en el bioma: {world.current_biome}."
     current_enemy = None
 
-    # Instanciacion de botones Map
-    btn_search = Button(110, 555, 220, 50, "Buscar / Explorar", font_main, BTN_COLOR, TEXT_COLOR, BTN_HOVER)
-    btn_rest = Button(340, 555, 220, 50, "Descansar", font_main, BTN_COLOR, TEXT_COLOR, BTN_HOVER)
-    btn_craft = Button(570, 555, 120, 50, "Crafteo", font_main, (210, 230, 210), TEXT_COLOR, (190, 210, 190))
+    # Instanciacion de botones Map (Botones más anchos para evitar desbordamiento)
+    btn_search = Button(110, 555, 230, 50, "Buscar / Explorar", font_main, BTN_COLOR, TEXT_COLOR, BTN_HOVER)
+    btn_rest = Button(350, 555, 230, 50, "Descansar", font_main, BTN_COLOR, TEXT_COLOR, BTN_HOVER)
+    btn_craft = Button(600, 555, 120, 50, "Crafteo", font_main, (210, 230, 210), TEXT_COLOR, (190, 210, 190))
     
-    btn_equip = Button(110, 615, 220, 50, "🎒 Equipo", font_main, (200, 220, 240), TEXT_COLOR, (180, 200, 220))
-    btn_tribe = Button(340, 615, 220, 50, "Manejar Tribu", font_main, (240, 230, 180), TEXT_COLOR, (220, 210, 160))
-    btn_camp = Button(570, 615, 120, 50, "⛺ Base", font_main, (240, 230, 180), TEXT_COLOR, (220, 210, 160))
+    btn_equip = Button(110, 615, 230, 50, "🎒 Equipo", font_main, (200, 220, 240), TEXT_COLOR, (180, 200, 220))
+    btn_camp = Button(350, 615, 230, 50, "⛺ Campamento", font_main, (240, 230, 180), TEXT_COLOR, (220, 210, 160))
     
     btn_craft_mix = Button(570, 555, 120, 50, "Mezclar", font_small, (200, 150, 150), TEXT_COLOR, (180, 130, 130))
     btn_craft_cancel = Button(570, 615, 120, 50, "Salir", font_small, (150, 150, 150), TEXT_COLOR, (130, 130, 130))
 
-    btn_fight_atk = Button(110, 555, 220, 50, "Atacar", font_main, (210, 100, 100), TEXT_COLOR, (190, 80, 80))
-    btn_shoot = Button(340, 555, 220, 50, "Arco", font_main, (140, 180, 140), TEXT_COLOR, (120, 160, 120))
+    btn_fight_atk = Button(110, 555, 230, 50, "Atacar", font_main, (210, 100, 100), TEXT_COLOR, (190, 80, 80))
+    btn_shoot = Button(350, 555, 230, 50, "Arco", font_main, (140, 180, 140), TEXT_COLOR, (120, 160, 120))
     btn_fight_def = Button(570, 555, 120, 50, "Cubrir", font_main, (140, 160, 220), TEXT_COLOR, (120, 140, 200))
-    btn_flee = Button(110, 615, 220, 50, "Huir", font_main, (180, 180, 150), TEXT_COLOR, (160, 160, 130))
+    btn_flee = Button(110, 615, 230, 50, "Huir", font_main, (180, 180, 150), TEXT_COLOR, (160, 160, 130))
 
     btn_travel = Button(50, 555, 330, 50, "Avanzar a la Zona", font_main, (160, 200, 160), TEXT_COLOR, (140, 180, 140))
     btn_ignore = Button(400, 555, 330, 50, "Ignorar / Seguir", font_main, (200, 180, 160), TEXT_COLOR, (180, 160, 140))
@@ -820,9 +819,9 @@ def main():
             screen.blit(b_txt, (bx, by))
             by += 20
         
-        # Superposición de la matriz minimapa (Ajustado por el lomo de cuero)
+        # Superposición de la matriz minimapa (Reposicionado para que no choque con HUD)
         if game_state in ["MAP", "ENCOUNTER", "DECISION", "OPPORTUNITY"]:
-            draw_minimap(screen, world, player, font_main, font_small, 110 + shake_offset_x, 180 + shake_offset_y, 200)
+            draw_minimap(screen, world, player, font_main, font_small, 110 + shake_offset_x, 210 + shake_offset_y, 200)
 
         def take_enemy_hit(self, enemy_name, dmg_raw, multiplier=1.0):
             # Wrapper local para main para trigger de sangre visual
@@ -832,20 +831,19 @@ def main():
             return recibido
 
         # Renderizado de Textos Principales y Localizacion
-        # HUD de Supervivencia y Era (Alineado a la cuadrícula del papel)
+        # HUD de Supervivencia y Era (Espaciado uniformemente)
         hud_x = 120
         title_surf = font_title.render(f"{player.evolution_stage} [ERA {world.era}]", True, TEXT_COLOR)
         gen_surf = font_main.render(f"Generación {player.generation}", True, TEXT_COLOR)
-        camp_txt = "⛺ (Seguro)" if world.has_camp else "(A la intemperie)"
         loc_surf = font_main.render(f"Zona: {world.current_location} {camp_txt}", True, (50, 120, 160) if world.has_camp else TEXT_COLOR)
         turn_surf = font_main.render(f"Supervivencia: {player.turn} Días", True, TEXT_COLOR)
         disc_surf = font_main.render(f"Descubrimiento: {len(player.discovered_concepts) * 10} PA", True, (160, 140, 40))
         
-        screen.blit(title_surf, (hud_x, 50))
-        screen.blit(gen_surf, (hud_x, 85))
-        screen.blit(loc_surf, (hud_x, 115))
-        screen.blit(turn_surf, (hud_x, 145))
-        screen.blit(disc_surf, (hud_x, 175))
+        screen.blit(title_surf, (hud_x, 35))
+        screen.blit(gen_surf, (hud_x, 65))
+        screen.blit(loc_surf, (hud_x, 90))
+        screen.blit(turn_surf, (hud_x, 115))
+        screen.blit(disc_surf, (hud_x, 140))
 
         # El dibujo central del jugador ahora es manejado por draw_character_profile (llamado arriba)
         # pero podemos dejar una version "sketchy" central si el usuario prefiere

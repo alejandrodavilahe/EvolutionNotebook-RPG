@@ -263,8 +263,8 @@ def draw_character_profile(surface, player, x, y):
             for i in range(img.get_width()):
                 for j in range(img.get_height()):
                     c = img.get_at((i, j))
-                    # Si el color es casi blanco (>230 en todos los canales), lo hacemos transparente
-                    if c.r > 230 and c.g > 230 and c.b > 230:
+                    # Si el color es casi blanco (>210 en todos los canales), lo hacemos transparente
+                    if c.r > 210 and c.g > 210 and c.b > 210:
                         img.set_at((i, j), (0, 0, 0, 0))
                 
             # Escalar a un tamaño de sidebar (aprox 160x180)
