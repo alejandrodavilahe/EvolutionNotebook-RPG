@@ -259,16 +259,18 @@ def draw_character_profile(surface, player, x, y):
         try:
             # Cargar con convert_alpha para manejo real de transparencia
             img = pygame.image.load(path).convert_alpha()
-            # Filtro manual de umbral (Eliminar fondo blanco/grisáceo que colorkey no capta por anti-alias)
+            # Escalar PRIMERO para manejar el anti-aliasing resultante
+            img = pygame.transform.smoothscale(img, (160, 180))
+            
+            # Filtro manual de umbral (Eliminar fondo blanco/grisáceo)
             for i in range(img.get_width()):
                 for j in range(img.get_height()):
                     c = img.get_at((i, j))
-                    # Si el color es casi blanco (>210 en todos los canales), lo hacemos transparente
-                    if c.r > 210 and c.g > 210 and c.b > 210:
+                    # Umbral más agresivo (>180) para limpiar bordes sucios tras el escalado
+                    if c.r > 180 and c.g > 180 and c.b > 180:
                         img.set_at((i, j), (0, 0, 0, 0))
-                
-            # Escalar a un tamaño de sidebar (aprox 160x180)
-            CHAR_ASSETS[era_key] = pygame.transform.smoothscale(img, (160, 180))
+            
+            CHAR_ASSETS[era_key] = img
         except:
             # Fallback a un círculo si falla la carga
             pygame.draw.circle(surface, (50, 50, 50), (x+80, y+90), 30)

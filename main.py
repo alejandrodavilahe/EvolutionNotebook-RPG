@@ -838,7 +838,7 @@ def main():
         camp_txt = "⛺ (Seguro)" if world.has_camp else "(A la intemperie)"
         loc_surf = font_main.render(f"Zona: {world.current_location} {camp_txt}", True, (50, 120, 160) if world.has_camp else TEXT_COLOR)
         turn_surf = font_main.render(f"Supervivencia: {player.turn} Días", True, TEXT_COLOR)
-        disc_surf = font_main.render(f"Descubrimiento: {len(player.discovered_concepts) * 10} PA", True, (160, 140, 40))
+        disc_surf = font_main.render(f"Descubrimiento: {len(player.discovered_concepts) * 10} PA", True, TEXT_COLOR)
         
         screen.blit(title_surf, (hud_x, 35))
         screen.blit(gen_surf, (hud_x, 65))
