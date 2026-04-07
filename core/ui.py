@@ -151,19 +151,38 @@ def draw_minimap(surface, world_obj, player, font_main, font_small, x, y, map_px
     pygame.draw.line(surface, (120, 80, 20), (p_rect.right, p_rect.top), (p_rect.left, p_rect.bottom), 1) # Lanza
 
 def draw_chronicle_notes(surface, entries, font):
-    # Notas al margen, algo inclinadas y con tinte de tinta
+    # Notas al margen, con word-wrap y algo inclinadas
     if not entries: return
     sw, sh = surface.get_size()
     color = (40, 50, 80, 160) # Azul tinta tenue
     
+    max_w = 250
     y_offset = 150
+    
     for entry in entries:
-        # Renderizar pequeño y algo rotado (Pygame rotate es costoso, simulamos con offset si es necesario)
-        txt_surf = font.render(entry, True, color)
-        # Rotar ligeramente para realismo
-        txt_surf = pygame.transform.rotate(txt_surf, 2)
-        surface.blit(txt_surf, (sw - 280, y_offset))
-        y_offset += 40
+        # Word wrapping simple
+        words = entry.split(' ')
+        lines = []
+        current_line = []
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            if font.size(test_line)[0] < max_w:
+                current_line.append(word)
+            else:
+                lines.append(' '.join(current_line))
+                current_line = [word]
+        lines.append(' '.join(current_line))
+        
+        for line in lines:
+            if y_offset > sh - 100: break
+            txt_surf = font.render(line, True, color)
+            # Rotar ligeramente cada línea de forma distinta para toque humano
+            import random
+            rot = random.Random(hash(line)).randint(-2, 2)
+            txt_surf = pygame.transform.rotate(txt_surf, rot)
+            surface.blit(txt_surf, (sw - 300, y_offset))
+            y_offset += 25
+        y_offset += 15 # Espacio entre entradas completas
 
 def draw_paper_weather_fx(surface, weather_type, intensity_seed):
     import random

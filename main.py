@@ -248,6 +248,7 @@ def main():
                         elif cell["special"] == "Enemigo Fuerte": evt = {"type": "enemy", "data": {"name": "Guardián de Zona", "dmg": 30, "hp": 55, "drops": {"Huesos": (1,2)}}}
                         else: evt = world.generate_search_event()
                         if evt["type"] == "nothing":
+                            player.add_chronicle("SEARCH_EMPTY", {"biome": world.current_biome})
                             current_message = "Buscaste exhaustivamente pero no encontraste nada útil."
                         elif evt["type"] == "resource":
                             player.heal_stat(evt["data"]["stat"], evt["data"]["amount"])
@@ -255,8 +256,10 @@ def main():
                             for _ in range(5): particles.append({"x": 500, "y": 450, "vx": random.uniform(-2,2), "vy": random.uniform(-4,-1), "color": (100, 255, 100), "life": 30})
                             if "item" in evt["data"]:
                                 player.add_to_inventory(evt["data"]["item"], evt["data"]["item_amt"])
+                                player.add_chronicle("SEARCH_SUCCESS", {"item": evt["data"]["item"]})
                             if "herb" in evt["data"] and evt["data"]["herb_amt"] > 0:
                                 player.add_to_inventory(evt["data"]["herb"], evt["data"]["herb_amt"])
+                                player.add_chronicle("SEARCH_SUCCESS", {"item": evt["data"]["herb"]})
                             current_message = f"Encontraste {evt['data']['name']}. "
                             if evt["data"]["stat"] == "thirst":
                                 if "Odre de Agua" in player.known_recipes:
@@ -296,6 +299,7 @@ def main():
                             
                     if btn_rest.handle_event(event):
                         player.rest(world.camp_level)
+                        player.add_chronicle("REST")
                         if world.camp_level == 0:
                             player.sanity = max(0, player.sanity - 10) # Dormir mal baja sanidad
                         else:
@@ -429,7 +433,7 @@ def main():
                                 if "Jefe Tribal" not in player.trophies: player.trophies.append("Jefe Tribal")
                                 if "chief" not in player.ancestral_art: player.ancestral_art.append("chief")
                                 player.discover("Espiritualidad")
-                                player.add_chronicle("El Jefe ha caído. Ahora el clan escucha mis susurros.")
+                                player.add_chronicle("FIGHT_WIN", {"enemy": en_name})
                                 current_message = "¡LO CORTASTE AL EJE! La tribu te jura lealtad. Eres Jefe."
                             else:
                                 if en_name not in player.trophies and en_name in ["Lobo", "Jaguar", "Sabertooth", "Búfalo Solitario", "Mamut", "Oso"]:
@@ -451,6 +455,7 @@ def main():
                                     player.inventory["Flechas"] = player.inventory.get("Flechas", 0) + recov
                                     dropped.append(f"{recov}x Flechas (Rescatadas)")
                                 
+                                player.add_chronicle("FIGHT_WIN", {"enemy": en_name})
                                 current_message = f"¡Masacraste al {en_name}! Ganaste: {', '.join(dropped)}"
                             game_state = "MAP"
                         else:
@@ -495,6 +500,7 @@ def main():
                                     player.inventory["Flechas"] = player.inventory.get("Flechas", 0) + recov
                                     dropped.append(f"{recov}x Flechas (Rescatadas)")
                                     
+                                player.add_chronicle("FIGHT_WIN", {"enemy": en_name})
                                 current_message = f"¡Abatiste al {en_name} desde lejos! Ganaste: {', '.join(dropped)}"
                                 game_state = "MAP"
                             else:
@@ -523,11 +529,12 @@ def main():
                         
                     if btn_flee.handle_event(event):
                         player.consume_energy(15)
+                        en_name = current_enemy["name"]
                         if random.random() < 0.6:
+                            player.add_chronicle("FIGHT_FLEE", {"enemy": en_name})
                             current_message = "¡Logras deshacerte del conflicto temblando y corres de la zona!"
                             game_state = "MAP"
                         else:
-                            en_name = current_enemy["name"]
                             recibido = player.take_enemy_hit(en_name, current_enemy["dmg"], 0.75)
                             if player.alive:
                                 current_message = f"¡Tropezaste huyendo! El {en_name} te rasga la espalda causándote {recibido} daño."
@@ -539,9 +546,11 @@ def main():
                             world.current_biome = pending_biome
                             world.current_location = "Zona Abierta"
                             world.generate_grid_for_biome(pending_biome)
+                            player.add_chronicle("MOVE", {"biome": pending_biome})
                             current_message = f"Pasaron los días... Bienvenidos al nuevo bioma: {pending_biome}. {pas_msg}"
                         else:
                             world.current_location = pending_landmark
+                            player.add_chronicle("MOVE", {"biome": pending_landmark}) # Landmark as biome name
                             current_message = f"Has migrado tu expedición hacia: {pending_landmark}. {pas_msg}"
                             
                         world.has_camp = False
@@ -549,8 +558,9 @@ def main():
                         game_state = "MAP"
                         turn_taken = True
                     if btn_ignore.handle_event(event):
-                        current_message = "Decidiste ignorarlo y quedarte en tu área designada."
+                        current_message = "Decidiste ignorar la migración y quedarte en tu área actual."
                         game_state = "MAP"
+                        turn_taken = False
 
                 elif game_state == "OPPORTUNITY":
                     if btn_opp_take.handle_event(event):
@@ -790,6 +800,11 @@ def main():
             sick_msg = player.check_disease_damage()
             if sick_msg:
                 w_msg += f"\n{sick_msg}"
+            
+            # Alertas de Supervivencia Narrativa (Cada 5 turnos si es crítico)
+            if player.turn % 5 == 0:
+                if player.hunger < 20: player.add_chronicle("HUNGER_LOW")
+                if player.thirst < 20: player.add_chronicle("THIRST_LOW")
                 
             current_message += w_msg
 

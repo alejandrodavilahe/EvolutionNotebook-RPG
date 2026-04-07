@@ -459,12 +459,14 @@ class Player:
             
         return ext
 
-    def add_chronicle(self, text):
-        import random
-        # 25% de mencionar ancestros si gen > 1
-        if self.generation > 1 and random.random() < 0.25:
-            prefixes = ["Los antiguos decían: ", "Sabiduría del clan: ", "Mis abuelos sabían que "]
-            text = random.choice(prefixes) + text
+    def add_chronicle(self, event_type, context={}):
+        from core.narrative import get_narrative
+        
+        # Handle string input for safety during transition
+        if isinstance(event_type, str) and event_type not in ["MOVE", "SEARCH_SUCCESS", "SEARCH_EMPTY", "FIGHT_WIN", "FIGHT_FLEE", "REST", "CRAFT", "HUNGER_LOW", "THIRST_LOW", "ERA_TRANSITION"]:
+            text = event_type
+        else:
+            text = get_narrative(event_type, context, self.generation)
             
         self.chronic_entries.append(text)
         if len(self.chronic_entries) > 5:
