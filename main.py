@@ -806,21 +806,18 @@ def main():
         draw_trophy_sketches(screen, player.trophies)
         from core.ui import draw_hallucinations, draw_character_profile
         draw_hallucinations(screen, player.sanity, player.turn)
-        draw_character_profile(screen, player, 740, 20, style="CAVE")
-        draw_character_profile(screen, player, 860, 20, style="SKETCH")
-        draw_character_profile(screen, player, 740, 140, style="SILHOUETTE")
-        draw_character_profile(screen, player, 860, 140, style="BLUEPRINT")
+        # Galería Final V2 (Centro de la Página para mejor vista)
+        draw_character_profile(screen, player, 200, 150, style="CAVE")
+        draw_character_profile(screen, player, 450, 150, style="SILHOUETTE")
         
-        # Labels
-        screen.blit(font_small.render("1.Rupestre", True, (50, 40, 30)), (740, 120))
-        screen.blit(font_small.render("2.Boceto", True, (50, 40, 30)), (860, 120))
-        screen.blit(font_small.render("3.Silueta", True, (50, 40, 30)), (740, 240))
-        screen.blit(font_small.render("4.Plano", True, (50, 40, 30)), (860, 240))
+        # Labels Grandes
+        screen.blit(font_main.render("OPCIÓN A: Rupestre V2", True, (80, 40, 30)), (180, 300))
+        screen.blit(font_main.render("OPCIÓN B: Silueta V2", True, (25, 30, 45)), (430, 300))
         
         draw_time_icon(screen, 110, 20, time_now, font_main)
-        if player.torch_uses > 0 and time_now == "Noche":
-            torch_txt = font_small.render(f"🔥 Antorcha: {player.torch_uses}t", True, (255, 150, 0))
-            screen.blit(torch_txt, (280, 20))
+        # Stats en su lugar original del sidebar
+        stats_x = 740
+        draw_bar(screen, stats_x, 150, 220, 15, player.hp, player.max_hp, BAR_COLORS["hp"], "Vida", font_small)
             
         # Draw Active Buffs
         bx, by = 750, 200

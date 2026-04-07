@@ -267,55 +267,50 @@ def draw_cave_art(surface, ancestral_art):
             pygame.draw.circle(surface, art_color, (sw-130, sh-100), 8, 2)
 
 def draw_style_cave(surface, player, x, y):
-    # Estilo 1: Pintura Rupestre (Lascaux)
-    ink_color = (40, 30, 25) # Ocre oscuro/carbón
-    body_poly = [(x+40, y+40), (x+55, y+70), (x+45, y+100), (x+35, y+100), (x+25, y+70)]
-    pygame.draw.polygon(surface, ink_color, body_poly)
-    pygame.draw.circle(surface, ink_color, (x+40, y+30), 12)
-    # Extremidades palos gruesos
-    pygame.draw.line(surface, ink_color, (x+35, y+60), (x+10, y+85), 6) # Brazo
-    pygame.draw.line(surface, ink_color, (x+45, y+100), (x+35, y+140), 5) # Pierna 1
-    pygame.draw.line(surface, ink_color, (x+35, y+100), (x+55, y+140), 5) # Pierna 2
-
-def draw_style_sketch(surface, player, x, y):
-    # Estilo 2: Boceto a Lápiz con Trama (Naturalista)
-    pencil = (80, 85, 100) # Gris oscuro grafito
+    # Estilo 1 V2: Pintura Rupestre (Pigmento Orgánico)
+    pigment = (138, 51, 36) # Terracota/Ocre real
     import random
-    # Cabeza (múltiples círculos tenues)
-    for _ in range(3):
-        off = random.randint(-2, 2)
-        pygame.draw.circle(surface, pencil, (x+40+off, y+25+off), 10, 1)
-    # Cuerpo (trama de líneas)
-    for i in range(15):
-        lx = random.randint(x+30, x+50)
-        ly1 = random.randint(y+35, y+55)
-        ly2 = random.randint(y+85, y+105)
-        pygame.draw.line(surface, pencil, (lx, ly1), (lx, ly2), 1)
-    # Extremidades rápidas
-    pygame.draw.line(surface, pencil, (x+35, y+60), (x+15, y+90), 1)
-    pygame.draw.line(surface, pencil, (x+45, y+100), (x+35, y+140), 1)
+    
+    # Dibujar cuerpo mediante "manchas" superpuestas para irregularidad
+    for _ in range(8):
+        off_x = random.randint(-5, 5)
+        off_y = random.randint(-8, 8)
+        pygame.draw.ellipse(surface, pigment, (x+30+off_x, y+45+off_y, 25, 60))
+    
+    # Cabeza con "mancha" circular imperfecta
+    pygame.draw.circle(surface, pigment, (x+40, y+30), 14)
+    # Granulado en los bordes para textura de roca/papel
+    for _ in range(15):
+        gx = x + 40 + random.randint(-20, 20)
+        gy = y + 70 + random.randint(-40, 40)
+        pygame.draw.circle(surface, pigment, (gx, gy), 1)
+
+    # Extremidades (trazos anchos e irregulares)
+    pygame.draw.line(surface, pigment, (x+35, y+65), (x+10, y+95), 7) # Brazo
+    pygame.draw.line(surface, pigment, (x+45, y+100), (x+40, y+145), 6) # Pierna 1
+    pygame.draw.line(surface, pigment, (x+35, y+100), (x+50, y+145), 6) # Pierna 2
 
 def draw_style_silhouette(surface, player, x, y):
-    # Estilo 3: Silueta Estilizada (Icono Moderno)
-    bg_paper = (240, 235, 220) # Color papel para "hueco"
+    # Estilo 3 V2: Silueta Recortada con Sombra (Paper-cut)
     ink = (25, 30, 45)
-    # Cuerpo Sólido
+    shadow = (180, 185, 170, 100) # Sombra suave papel
+    
+    # Sombra Inferior (Desplazada)
+    pygame.draw.ellipse(surface, shadow, (x+28, y+38, 32, 72))
+    pygame.draw.circle(surface, shadow, (x+43, y+23), 13)
+    
+    # Cuerpo Principal
     pygame.draw.ellipse(surface, ink, (x+25, y+35, 30, 70))
     pygame.draw.circle(surface, ink, (x+40, y+20), 12)
-    # Piernas/Brazos con borde limpio
-    pygame.draw.rect(surface, ink, (x+30, y+100, 8, 40))
-    pygame.draw.rect(surface, ink, (x+42, y+100, 8, 40))
-
-def draw_style_blueprint(surface, player, x, y):
-    # Estilo 4: Esquema Da Vinci (Azul de planos)
-    blue = (0, 70, 140)
-    pygame.draw.circle(surface, blue, (x+40, y+25), 10, 1) # Guía cabeza
-    pygame.draw.rect(surface, blue, (x+30, y+35, 20, 60), 1) # Caja torácica
-    pygame.draw.line(surface, blue, (x+40, y+15), (x+40, y+150), 1) # Eje central
-    # Cotas/Flechas
-    pygame.draw.line(surface, blue, (x+10, y+25), (x+25, y+25), 1) # Línea cota
-    text_cota = pygame.font.SysFont("arial", 9).render("h:1.75m", True, blue)
-    surface.blit(text_cota, (x+5, y+30))
+    # Contorno "Grafito" sutil
+    pygame.draw.ellipse(surface, (60, 65, 75), (x+25, y+35, 30, 70), 1)
+    
+    # Piernas Bloque Limpio
+    pygame.draw.rect(surface, ink, (x+30, y+100, 8, 45))
+    pygame.draw.rect(surface, ink, (x+42, y+100, 8, 45))
+    # Sombra piernas
+    pygame.draw.rect(surface, shadow, (x+33, y+103, 8, 45))
+    pygame.draw.rect(surface, shadow, (x+45, y+103, 8, 45))
 
 def draw_character_profile(surface, player, x, y, style="CAVE"):
     # Selector de estilo según el pedido del usuario
