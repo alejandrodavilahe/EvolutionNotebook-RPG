@@ -1,21 +1,22 @@
 # Evolution Notebook - Survival RPG
 
-Un simulador de supervivencia "Roguelite" escrito en Python puro utilizando el motor `pygame`. Este proyecto se enfoca en entregar una experiencia desafiante mediante permadeath, recolección cruda de materiales, árboles genéticos, y un mundo duro y expansivo en diferentes biomas.
+Un simulador de supervivencia "Roguelite" escrito en Python puro utilizando el motor `pygame-ce`. Este proyecto se enfoca en entregar una experiencia desafiante mediante permadeath, recolección cruda de materiales, árboles genéticos, y un mundo duro y expansivo en diferentes biomas.
 
 ## ⛺ Características Principales
-* **Panteón Genético y Metaprogresión:** La muerte no es el final. Los días sobrevividos se convierten en "Puntos Ancestrales" (PA), permitiendo comprar "Mutaciones" permanentes (Brazos de Gorila, Metabolismo Alto, etc.) que tu siguiente reencarnación heredará por default.
-* **Sistema de Equipamiento (Paperdoll):** Personaliza tu `Arma`, `Tórax`, `Cabeza` y `Botas`. El avatar dibujado algorítmicamente vestirá y empuñará el botín visualmente con sus respectivos asensos estadísticos calculados en tiempo real.
-* **Condiciones Adversas:** Enfrenta clima hostil generado procedimentalmente y lidia con enfermedades complejas como Disentería, Infección, Envenenamiento e Hipotermia según cómo trates tus heridas y lo que consumas.
-* **Progresión de Asentamiento:** Funda desde una pequeña fogata (usando simple yesca y fibra) hasta levantar tiendas y, eventualmente, la Forja de la Edad de los Metales (Era 2).
-* **Audio y Ambientes Reactivos:** Generador dinámico de pistas de fondo (BGM proc-gen) que reaccionan a los escenarios que exploras en tu aventura.
+* **Panteón Genético y Metaprogresión:** La muerte no es el final. Los días sobrevividos se convierten en "Puntos Ancestrales" (PA), permitiendo comprar "Mutaciones" permanentes que tu siguiente reencarnación heredará.
+* **Sistema de Equipamiento Evolutivo:** El avatar del jugador es un boceto que evoluciona físicamente (postura y detalle) según la Era y el equipo que vistas.
+* **Atmósfera de Diario Realista:** La interfaz emula un diario antiguo de cuero. La lluvia humedece el papel, el polvo se asienta en las páginas y la tinta roja (sangre) mancha la libreta tras los combates.
+* **Crónica del Clan:** Notas manuscritas aparecen en los márgenes narrando tus hitos, derrotas y la sabiduría de tus ancestros.
+* **Sistema de Descubrimiento (I+D):** No basta con tener materiales. Debes desbloquear conceptos (Espiritualidad, Trampeo, Curación) mediante hitos de juego para acceder a recetas avanzadas.
+* **Eventos de Migración:** Manadas de Mamuts y Bisontes aparecen dinámicamente en el mapa, ofreciendo grandes recompensas y peligros.
 
 ## 🚀 Requisitos de Instalación
-Necesitas **Python 3.10+**. Clona este repositorio y en tu terminal desplázate a la carpeta raíz para instalar el motor libre.
+Necesitas **Python 3.10+**. Este proyecto es compatible con las versiones más recientes de Python (incluyendo 3.14) gracias al uso de `pygame-ce`.
 
 ```bash
 pip install -r requirements.txt
 ```
-*(Nota: Principalmente descargará `pygame`)*
+*(Nota: Instalará `pygame-ce` para máxima compatibilidad y rendimiento)*
 
 ## 🎮 Cómo Jugar
 Simplemente levanta el archivo maestro y sumérgete en el bloc:
@@ -24,13 +25,13 @@ python main.py
 ```
 
 ## 🛠️ Sistemas y Crafting
-El modo "Crafting" pide seleccionar **dos** ítems simultáneos del inventario. La lógica experimental de su uso imita lógicas físicas reales. Por ejemplo:
-* `Pedernal` + `Fibra` = Cuchillo
-* `Filtro de Grava` + `Agua Turbia` = Agua Limpia Purificada
-* `Huesos` + `Piel` = Armadura Defensiva
+El modo "Crafting" pide seleccionar **dos** ítems simultáneos del inventario. Pero cuidado: las recetas de Era 2 y rituales requieren que primero **descubras** el concepto adecuado.
+* `Pedernal` + `Huesos` = Cuchillo (Requiere Manejo del Fuego para la Forja)
+* `Milenrama` + `Agua` = Curación (Desbloquea el concepto de Medicina)
+* `Piedra` + `Carbón` = Tótem (Requiere haber descubierto la Espiritualidad)
 
-## 🌍 Mundos Seguros (Al inicio)
-Nacerás pacíficamente (Biomas: Sabana, Bosque Templado, Pradera). A medida que el explorador avance "Viajando" o persiguiendo "Landmarks", podrá transpirar accidentalmente o mudarse voluntariamente a Tundras infames, Eriales Volcánicos y Pantanos de asedio mortal. ¡Toma tus precauciones armando un campamento antes de viajar!
+## 🌍 Mundos y Peligros
+Nacerás en biomas pacíficos, pero la exploración te llevará a Tundras infames y Pantanos mortales. El clima afectará no solo tu estado, sino la legibilidad y el estado físico de tu cuaderno de bitácora.
 
 ---
 *Escrito como un homenaje rudimentario a las simulaciones darwinianas duras.*
