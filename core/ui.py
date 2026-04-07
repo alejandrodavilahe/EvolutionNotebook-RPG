@@ -266,64 +266,40 @@ def draw_cave_art(surface, ancestral_art):
             pygame.draw.circle(surface, art_color, (sw-100, sh-100), 15, 2)
             pygame.draw.circle(surface, art_color, (sw-130, sh-100), 8, 2)
 
-def draw_style_cave(surface, player, x, y):
-    # Estilo 1 V2: Pintura Rupestre (Pigmento Orgánico)
-    pigment = (138, 51, 36) # Terracota/Ocre real
-    import random
-    
-    # Dibujar cuerpo mediante "manchas" superpuestas para irregularidad
-    for _ in range(8):
-        off_x = random.randint(-5, 5)
-        off_y = random.randint(-8, 8)
-        pygame.draw.ellipse(surface, pigment, (x+30+off_x, y+45+off_y, 25, 60))
-    
-    # Cabeza con "mancha" circular imperfecta
-    pygame.draw.circle(surface, pigment, (x+40, y+30), 14)
-    # Granulado en los bordes para textura de roca/papel
-    for _ in range(15):
-        gx = x + 40 + random.randint(-20, 20)
-        gy = y + 70 + random.randint(-40, 40)
-        pygame.draw.circle(surface, pigment, (gx, gy), 1)
+CHAR_ASSETS = {}
 
-    # Extremidades (trazos anchos e irregulares)
-    pygame.draw.line(surface, pigment, (x+35, y+65), (x+10, y+95), 7) # Brazo
-    pygame.draw.line(surface, pigment, (x+45, y+100), (x+40, y+145), 6) # Pierna 1
-    pygame.draw.line(surface, pigment, (x+35, y+100), (x+50, y+145), 6) # Pierna 2
+def draw_character_profile(surface, player, x, y):
+    # Imagen de alta fidelidad (Boceto arqueológico)
+    era_key = f"era{player.era}"
+    if era_key not in CHAR_ASSETS:
+        path = f"assets/char_{era_key}.png"
+        try:
+            img = pygame.image.load(path).convert()
+            img.set_colorkey((255, 255, 255)) # Hacer el fondo blanco transparente
+            # Escalar a un tamaño de sidebar (aprox 160x180)
+            CHAR_ASSETS[era_key] = pygame.transform.smoothscale(img, (160, 180))
+        except:
+            # Fallback a un círculo si falla la carga
+            pygame.draw.circle(surface, (50, 50, 50), (x+80, y+90), 30)
+            return
 
-def draw_style_silhouette(surface, player, x, y):
-    # Estilo 3 V2: Silueta Recortada con Sombra (Paper-cut)
-    ink = (25, 30, 45)
-    shadow = (180, 185, 170, 100) # Sombra suave papel
-    
-    # Sombra Inferior (Desplazada)
-    pygame.draw.ellipse(surface, shadow, (x+28, y+38, 32, 72))
-    pygame.draw.circle(surface, shadow, (x+43, y+23), 13)
-    
-    # Cuerpo Principal
-    pygame.draw.ellipse(surface, ink, (x+25, y+35, 30, 70))
-    pygame.draw.circle(surface, ink, (x+40, y+20), 12)
-    # Contorno "Grafito" sutil
-    pygame.draw.ellipse(surface, (60, 65, 75), (x+25, y+35, 30, 70), 1)
-    
-    # Piernas Bloque Limpio
-    pygame.draw.rect(surface, ink, (x+30, y+100, 8, 45))
-    pygame.draw.rect(surface, ink, (x+42, y+100, 8, 45))
-    # Sombra piernas
-    pygame.draw.rect(surface, shadow, (x+33, y+103, 8, 45))
-    pygame.draw.rect(surface, shadow, (x+45, y+103, 8, 45))
+    # Dibujar la base del personaje
+    surface.blit(CHAR_ASSETS[era_key], (x, y))
 
-def draw_character_profile(surface, player, x, y, style="CAVE"):
-    # Selector de estilo según el pedido del usuario
-    if style == "CAVE": draw_style_cave(surface, player, x, y)
-    elif style == "SKETCH": draw_style_sketch(surface, player, x, y)
-    elif style == "SILHOUETTE": draw_style_silhouette(surface, player, x, y)
-    elif style == "BLUEPRINT": draw_style_blueprint(surface, player, x, y)
-    
-    # Renderizado común de equipo (estilo adaptado al dispatcher)
+    # Renderizado común de equipo (estilo adaptado)
     wp = player.equipment.get("Weapon")
     if wp and wp != "Puños":
-        # Arma simple genérica para el museo de estilos
-        pygame.draw.line(surface, (100, 80, 50), (x+15, y+60), (x+10, y+120), 2)
+        # Posición relativa a la mano del dibujo (ajustada a la imagen 160x180)
+        hx, hy = x + 30, y + 100
+        pygame.draw.line(surface, (80, 60, 40), (hx, hy), (hx-10, hy+40), 4) # Mango
+        tip_c = (30, 30, 30) if "Obsidiana" in wp else (180, 180, 160)
+        pygame.draw.polygon(surface, tip_c, [(hx, hy-10), (hx-10, hy+5), (hx+10, hy+5)]) # Punta
+
+    # Heridas de Tinta Roja (Visualmente integradas)
+    if player.hp < player.max_hp * 0.5:
+        # Tachones de sangre en el torso del dibujo
+        for i in range(3):
+            pygame.draw.line(surface, (150, 20, 20), (x+60, y+70+i*10), (x+100, y+80+i*10), 3)
 
 def draw_blood_splatters(surface, blood_intensity, turn_seed):
     import random
