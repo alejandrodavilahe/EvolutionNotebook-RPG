@@ -2,9 +2,9 @@ import pygame
 import sys
 import random
 import os
-from player import Player
-from ui import Button, draw_bar, draw_text_box, draw_inventory
-from world import World
+from core.player import Player
+from core.ui import Button, draw_bar, draw_text_box, draw_inventory
+from core.world import World
 
 # Colores estéticos limpios/minimalistas
 BG_COLOR = (245, 245, 240)  # Tono hueso / libreta clara
@@ -31,9 +31,9 @@ def get_next_equip(current, possible, inv):
 def main():
     pygame.init()
     pygame.mixer.init()
-    if os.path.exists("bgm.wav"):
+    if os.path.exists("assets/bgm.wav"):
         try:
-            pygame.mixer.music.load("bgm.wav")
+            pygame.mixer.music.load("assets/bgm.wav")
             pygame.mixer.music.set_volume(0.3)
             pygame.mixer.music.play(-1)
         except: pass
