@@ -804,15 +804,13 @@ def main():
             
         draw_ink_splotches(screen, player.turn + player.generation)
         draw_trophy_sketches(screen, player.trophies)
-        from core.ui import draw_hallucinations, draw_character_profile
-        draw_hallucinations(screen, player.sanity, player.turn)
-        draw_character_profile(screen, player, 770, 30)
+        draw_character_profile(screen, player, 780, 40)
         
-        draw_time_icon(screen, 110, 20, time_now, font_main)
+        draw_time_icon(screen, 120, 20, time_now, font_main)
         
-        # Stats en su lugar original del sidebar
-        stats_x = 740
-        draw_bar(screen, stats_x, 220, 220, 15, player.hp, player.max_hp, BAR_COLORS["hp"], "Vida", font_small)
+        # Stats Sidebar (Reposicionados para mayor claridad)
+        stats_x = 750
+        draw_bar(screen, stats_x, 250, 220, 15, player.hp, player.max_hp, BAR_COLORS["hp"], "Vida", font_small)
             
         # Draw Active Buffs
         bx, by = 750, 200
@@ -833,20 +831,19 @@ def main():
             return recibido
 
         # Renderizado de Textos Principales y Localizacion
-        title_surf = font_title.render(f"Gen {player.generation} - {player.evolution_stage} [ERA {world.era}]", True, TEXT_COLOR)
-        
-        camp_txt = "⛺ (Seguro)" if world.has_camp else "(A la intemperie)"
+        # HUD de Supervivencia y Era (Alineado a la cuadrícula del papel)
+        hud_x = 120
+        title_surf = font_title.render(f"{player.evolution_stage} [ERA {world.era}]", True, TEXT_COLOR)
+        gen_surf = font_main.render(f"Generación {player.generation}", True, TEXT_COLOR)
         loc_surf = font_main.render(f"Zona: {world.current_location} {camp_txt}", True, (50, 120, 160) if world.has_camp else TEXT_COLOR)
+        turn_surf = font_main.render(f"Supervivencia: {player.turn} Días", True, TEXT_COLOR)
+        disc_surf = font_main.render(f"Descubrimiento: {len(player.discovered_concepts) * 10} PA", True, (160, 140, 40))
         
-        turn_surf = font_main.render(f"Días de Supervivencia: {player.turn}", True, TEXT_COLOR)
-        
-        # Puntaje de Descubrimiento
-        disc_surf = font_main.render(f"Puntaje Descubrimiento: {len(player.discovered_concepts) * 10}", True, (200, 200, 50))
-        
-        screen.blit(title_surf, (110, 50))
-        screen.blit(loc_surf, (110, 80))
-        screen.blit(turn_surf, (110, 110))
-        screen.blit(disc_surf, (110, 140))
+        screen.blit(title_surf, (hud_x, 50))
+        screen.blit(gen_surf, (hud_x, 85))
+        screen.blit(loc_surf, (hud_x, 115))
+        screen.blit(turn_surf, (hud_x, 145))
+        screen.blit(disc_surf, (hud_x, 175))
 
         # El dibujo central del jugador ahora es manejado por draw_character_profile (llamado arriba)
         # pero podemos dejar una version "sketchy" central si el usuario prefiere
@@ -865,16 +862,16 @@ def main():
         # Eliminamos el dibujo central redundante para limpiar la 'página'
         pass
 
-        # Renderizado de Estadísticas Sidebar Mid
-        stats_x = 740
-        draw_bar(screen, stats_x, 220, 220, 15, player.hp, player.max_hp, BAR_COLORS["hp"], "Vida", font_small)
-        draw_bar(screen, stats_x, 260, 220, 15, player.hunger, player.max_hunger, BAR_COLORS["hunger"], "Hambre (Comida)", font_small)
-        draw_bar(screen, stats_x, 300, 220, 15, player.thirst, player.max_thirst, BAR_COLORS["thirst"], "Sed (Agua)", font_small)
-        draw_bar(screen, stats_x, 340, 220, 15, player.energy, player.max_energy, BAR_COLORS["energy"], "Energía", font_small)
+        # Renderizado de Estadísticas Sidebar Mid (Uniforme)
+        stats_x = 750
+        # No repetimos HP porque se llamó arriba, pero ajustamos el resto
+        draw_bar(screen, stats_x, 290, 220, 15, player.hunger, player.max_hunger, BAR_COLORS["hunger"], "Hambre", font_small)
+        draw_bar(screen, stats_x, 330, 220, 15, player.thirst, player.max_thirst, BAR_COLORS["thirst"], "Sed", font_small)
+        draw_bar(screen, stats_x, 370, 220, 15, player.energy, player.max_energy, BAR_COLORS["energy"], "Energía", font_small)
         
         # UI Sanity Dinámica
         if player.era > 1 or player.sanity < 95:
-            draw_bar(screen, stats_x, 380, 220, 15, player.sanity, player.max_sanity, BAR_COLORS["sanity"], "Sanidad", font_small)
+            draw_bar(screen, stats_x, 410, 220, 15, player.sanity, player.max_sanity, BAR_COLORS["sanity"], "Mente", font_small)
             
         # Draw weather particles (overlay)
         for p in weather_particles:

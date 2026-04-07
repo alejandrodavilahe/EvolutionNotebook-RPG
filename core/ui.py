@@ -29,24 +29,7 @@ class Button:
                 return True
         return False
 
-def draw_bar(surface, x, y, width, height, value, max_value, color, label, font):
-    # Fondo de la barra (Gris)
-    bg_rect = pygame.Rect(x, y, width, height)
-    pygame.draw.rect(surface, (210, 210, 210), bg_rect, border_radius=4)
-    
-    # Relleno de la barra (el color)
-    ratio = max(0.0, min(1.0, value / max_value))
-    fill_width = int(width * ratio)
-    if fill_width > 0:
-        fill_rect = pygame.Rect(x, y, fill_width, height)
-        pygame.draw.rect(surface, color, fill_rect, border_radius=4)
-        
-    # Contorno de la barra
-    pygame.draw.rect(surface, (80, 80, 80), bg_rect, width=2, border_radius=4)
-    
-    # Etiqueta de texto de la estadística
-    label_surf = font.render(f"{label}: {value}/{max_value}", True, (50, 50, 50))
-    surface.blit(label_surf, (x, y - 22))
+# draw_bar consolidated at the end of the file to avoid redundancy
 
 def draw_text_box(surface, text, x, y, width, height, font, bg_color=(240, 240, 240), text_color=(50, 50, 50)):
     rect = pygame.Rect(x, y, width, height)
@@ -269,13 +252,21 @@ def draw_cave_art(surface, ancestral_art):
 CHAR_ASSETS = {}
 
 def draw_character_profile(surface, player, x, y):
-    # Imagen de alta fidelidad (Boceto arqueológico)
+    # Imagen de alta fidelidad (Boceto arqueológico con transparencia mejorada)
     era_key = f"era{player.era}"
     if era_key not in CHAR_ASSETS:
         path = f"assets/char_{era_key}.png"
         try:
-            img = pygame.image.load(path).convert()
-            img.set_colorkey((255, 255, 255)) # Hacer el fondo blanco transparente
+            # Cargar con convert_alpha para manejo real de transparencia
+            img = pygame.image.load(path).convert_alpha()
+            # Filtro manual de umbral (Eliminar fondo blanco/grisáceo que colorkey no capta por anti-alias)
+            for i in range(img.get_width()):
+                for j in range(img.get_height()):
+                    c = img.get_at((i, j))
+                    # Si el color es casi blanco (>230 en todos los canales), lo hacemos transparente
+                    if c.r > 230 and c.g > 230 and c.b > 230:
+                        img.set_at((i, j), (0, 0, 0, 0))
+                
             # Escalar a un tamaño de sidebar (aprox 160x180)
             CHAR_ASSETS[era_key] = pygame.transform.smoothscale(img, (160, 180))
         except:
@@ -326,14 +317,26 @@ def draw_blood_splatters(surface, blood_intensity, turn_seed):
             
         surface.blit(temp_s, (bx-size*2, by-size*2))
 
-def draw_bar(surface, x, y, w, h, val, max_val, color, label, font, active=True):
-    if not active: return
-    pygame.draw.rect(surface, (50, 50, 50), (x, y, w, h))
-    fill_w = int((val / max_val) * w)
-    pygame.draw.rect(surface, color, (x, y, fill_w, h))
-    pygame.draw.rect(surface, (200, 200, 200), (x, y, w, h), 1)
-    lbl = font.render(f"{label}: {int(val)}/{int(max_val)}", True, (255, 255, 255))
-    surface.blit(lbl, (x, y - 20))
+def draw_bar(surface, x, y, width, height, value, max_value, color, label, font):
+    # Consolidación final: Fondo, Relleno, Contorno y Etiqueta Negra
+    # Fondo (Gris suave para que no resalte demasiado sobre el papel)
+    bg_rect = pygame.Rect(x, y, width, height)
+    pygame.draw.rect(surface, (210, 210, 210), bg_rect, border_radius=4)
+    
+    # Relleno de la barra (Color basado en el tipo de stat)
+    ratio = max(0.0, min(1.0, value / (max_value if max_value > 0 else 1)))
+    fill_width = int(width * ratio)
+    if fill_width > 0:
+        fill_rect = pygame.Rect(x, y, fill_width, height)
+        pygame.draw.rect(surface, color, fill_rect, border_radius=4)
+        
+    # Contorno "Ink-style" sutil
+    pygame.draw.rect(surface, (50, 50, 55), bg_rect, width=1, border_radius=4)
+    
+    # Etiqueta de texto de la estadística (NEGRO para legibilidad)
+    label_txt = f"{label}: {int(value)}/{int(max_value)}"
+    label_surf = font.render(label_txt, True, (25, 30, 45))
+    surface.blit(label_surf, (x, y - 22))
 
 def draw_hallucinations(surface, sanity, seed):
     # Solo aparecen si la sanidad es baja (<60)
