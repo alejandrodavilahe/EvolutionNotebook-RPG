@@ -193,6 +193,10 @@ def main():
     pantheon_data = {"puntos": 0, "perks": [], "generation": 1, "ancestral_art": []}
     
     blood_intensity = 0
+    screen_shake = 0
+    shake_offset_x = 0
+    shake_offset_y = 0
+    
     crafting_selected = []
     inv_slots = []
     
