@@ -266,82 +266,69 @@ def draw_cave_art(surface, ancestral_art):
             pygame.draw.circle(surface, art_color, (sw-100, sh-100), 15, 2)
             pygame.draw.circle(surface, art_color, (sw-130, sh-100), 8, 2)
 
-def draw_character_profile(surface, player, x, y):
-    # Estilo "Pixel Art" (Sello de Tinta)
-    ink_color = (25, 30, 45) # Tinta carbón
-    px = 6 # Tamaño de cada bloque de píxel
-    
-    # Mascara de bits para las siluetas (1 = Tinta, 0 = Vacío)
-    if player.era == 1:
-        # Silueta Neandertal (Robusto)
-        mask = [
-            "  XXXX  ",
-            " XXXXXX ",
-            " XXXXXX ",
-            "  XXXX  ",
-            " XXXXXXX",
-            "XXXXXXXX",
-            "XXXXXXXX",
-            " XXXXXX ",
-            "  XX XX ",
-            "  XX XX "
-        ]
-        offset_x = 0
-    else:
-        # Silueta Sapiens (Estilizado)
-        mask = [
-            "   XX   ",
-            "  XXXX  ",
-            "   XX   ",
-            "   XX   ",
-            "  XXXX  ",
-            "  XXXX  ",
-            "  XXXX  ",
-            "   XX   ",
-            "   XX   ",
-            "  X  X  ",
-            "  X  X  ",
-            "  X  X  "
-        ]
-        offset_x = 10
+def draw_style_cave(surface, player, x, y):
+    # Estilo 1: Pintura Rupestre (Lascaux)
+    ink_color = (40, 30, 25) # Ocre oscuro/carbón
+    body_poly = [(x+40, y+40), (x+55, y+70), (x+45, y+100), (x+35, y+100), (x+25, y+70)]
+    pygame.draw.polygon(surface, ink_color, body_poly)
+    pygame.draw.circle(surface, ink_color, (x+40, y+30), 12)
+    # Extremidades palos gruesos
+    pygame.draw.line(surface, ink_color, (x+35, y+60), (x+10, y+85), 6) # Brazo
+    pygame.draw.line(surface, ink_color, (x+45, y+100), (x+35, y+140), 5) # Pierna 1
+    pygame.draw.line(surface, ink_color, (x+35, y+100), (x+55, y+140), 5) # Pierna 2
 
-    # Renderizado de la máscara con "Bleed" (sangrado de tinta)
+def draw_style_sketch(surface, player, x, y):
+    # Estilo 2: Boceto a Lápiz con Trama (Naturalista)
+    pencil = (80, 85, 100) # Gris oscuro grafito
     import random
-    for r_idx, row in enumerate(mask):
-        for c_idx, char in enumerate(row):
-            if char == "X":
-                # Jitter leve para simular sello de madera/tinta
-                jitter_x = random.randint(-1, 1)
-                jitter_y = random.randint(-1, 1)
-                pygame.draw.rect(surface, ink_color, (x + offset_x + c_idx*px + jitter_x, y + r_idx*px + jitter_y, px, px))
+    # Cabeza (múltiples círculos tenues)
+    for _ in range(3):
+        off = random.randint(-2, 2)
+        pygame.draw.circle(surface, pencil, (x+40+off, y+25+off), 10, 1)
+    # Cuerpo (trama de líneas)
+    for i in range(15):
+        lx = random.randint(x+30, x+50)
+        ly1 = random.randint(y+35, y+55)
+        ly2 = random.randint(y+85, y+105)
+        pygame.draw.line(surface, pencil, (lx, ly1), (lx, ly2), 1)
+    # Extremidades rápidas
+    pygame.draw.line(surface, pencil, (x+35, y+60), (x+15, y+90), 1)
+    pygame.draw.line(surface, pencil, (x+45, y+100), (x+35, y+140), 1)
 
-    # Equipo en estilo Píxel
-    weapon = player.equipment.get("Weapon")
-    if weapon and weapon != "Puños":
-        w_color = (15, 20, 30) if "Obsidiana" in weapon else (100, 70, 40)
-        # Dibujar lanza pixelada
-        for i in range(12):
-            pygame.draw.rect(surface, w_color, (x + offset_x - 5, y + 20 + i*px, px, px))
-        # Punta lanza
-        tip_c = (10, 10, 15) if "Obsidiana" in weapon else (180, 180, 160)
-        pygame.draw.rect(surface, tip_c, (x + offset_x - 5, y + 15, px, px))
-        pygame.draw.rect(surface, tip_c, (x + offset_x - 8, y + 20, px*2, px))
+def draw_style_silhouette(surface, player, x, y):
+    # Estilo 3: Silueta Estilizada (Icono Moderno)
+    bg_paper = (240, 235, 220) # Color papel para "hueco"
+    ink = (25, 30, 45)
+    # Cuerpo Sólido
+    pygame.draw.ellipse(surface, ink, (x+25, y+35, 30, 70))
+    pygame.draw.circle(surface, ink, (x+40, y+20), 12)
+    # Piernas/Brazos con borde limpio
+    pygame.draw.rect(surface, ink, (x+30, y+100, 8, 40))
+    pygame.draw.rect(surface, ink, (x+42, y+100, 8, 40))
 
-    body_gear = player.equipment.get("Body")
-    if body_gear and body_gear != "Nada":
-        # Túnica de bloques
-        pygame.draw.rect(surface, (120, 100, 80), (x + offset_x + px, y + 4*px, 6*px, 6*px), 1)
-        if "Escamoso" in body_gear:
-            pygame.draw.rect(surface, (80, 110, 80), (x + offset_x + 2*px, y + 5*px, 4*px, 4*px), 0)
+def draw_style_blueprint(surface, player, x, y):
+    # Estilo 4: Esquema Da Vinci (Azul de planos)
+    blue = (0, 70, 140)
+    pygame.draw.circle(surface, blue, (x+40, y+25), 10, 1) # Guía cabeza
+    pygame.draw.rect(surface, blue, (x+30, y+35, 20, 60), 1) # Caja torácica
+    pygame.draw.line(surface, blue, (x+40, y+15), (x+40, y+150), 1) # Eje central
+    # Cotas/Flechas
+    pygame.draw.line(surface, blue, (x+10, y+25), (x+25, y+25), 1) # Línea cota
+    text_cota = pygame.font.SysFont("arial", 9).render("h:1.75m", True, blue)
+    surface.blit(text_cota, (x+5, y+30))
 
-    head_gear = player.equipment.get("Head")
-    if head_gear == "Casco de Hueso":
-        pygame.draw.rect(surface, (230, 230, 220), (x + offset_x + 2*px, y - px, 4*px, 2*px))
-
-    # Heridas de Tinta Roja (Píxel)
-    if player.hp < player.max_hp * 0.5:
-        pygame.draw.rect(surface, (180, 30, 30), (x + offset_x + 3*px, y + 5*px, px, px))
-        pygame.draw.rect(surface, (180, 30, 30), (x + offset_x + 5*px, y + 7*px, px, px))
+def draw_character_profile(surface, player, x, y, style="CAVE"):
+    # Selector de estilo según el pedido del usuario
+    if style == "CAVE": draw_style_cave(surface, player, x, y)
+    elif style == "SKETCH": draw_style_sketch(surface, player, x, y)
+    elif style == "SILHOUETTE": draw_style_silhouette(surface, player, x, y)
+    elif style == "BLUEPRINT": draw_style_blueprint(surface, player, x, y)
+    
+    # Renderizado común de equipo (estilo adaptado al dispatcher)
+    wp = player.equipment.get("Weapon")
+    if wp and wp != "Puños":
+        # Arma simple genérica para el museo de estilos
+        pygame.draw.line(surface, (100, 80, 50), (x+15, y+60), (x+10, y+120), 2)
 
 def draw_blood_splatters(surface, blood_intensity, turn_seed):
     import random

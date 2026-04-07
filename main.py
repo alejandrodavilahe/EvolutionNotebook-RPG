@@ -806,7 +806,16 @@ def main():
         draw_trophy_sketches(screen, player.trophies)
         from core.ui import draw_hallucinations, draw_character_profile
         draw_hallucinations(screen, player.sanity, player.turn)
-        draw_character_profile(screen, player, 750, 30) # Sidebar Top
+        draw_character_profile(screen, player, 740, 20, style="CAVE")
+        draw_character_profile(screen, player, 860, 20, style="SKETCH")
+        draw_character_profile(screen, player, 740, 140, style="SILHOUETTE")
+        draw_character_profile(screen, player, 860, 140, style="BLUEPRINT")
+        
+        # Labels
+        screen.blit(font_small.render("1.Rupestre", True, (50, 40, 30)), (740, 120))
+        screen.blit(font_small.render("2.Boceto", True, (50, 40, 30)), (860, 120))
+        screen.blit(font_small.render("3.Silueta", True, (50, 40, 30)), (740, 240))
+        screen.blit(font_small.render("4.Plano", True, (50, 40, 30)), (860, 240))
         
         draw_time_icon(screen, 110, 20, time_now, font_main)
         if player.torch_uses > 0 and time_now == "Noche":
