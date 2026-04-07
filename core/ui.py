@@ -108,3 +108,55 @@ def draw_inventory(surface, x, y, width, height, inventory_dict, font_small, tit
             y_offset += 25
             
     return slots
+
+def draw_minimap(surface, world_obj, player, font_main, font_small, x, y, map_px_size):
+    # Dibuja un grid basado en world_obj.grid The area is a square of `map_px_size`
+    rect = pygame.Rect(x, y, map_px_size, map_px_size)
+    pygame.draw.rect(surface, (30, 30, 30), rect, border_radius=8)
+    pygame.draw.rect(surface, (100, 100, 100), rect, width=4, border_radius=8)
+    
+    grid = world_obj.grid
+    grid_size = world_obj.grid_size
+    cell_px = map_px_size // grid_size
+    
+    px, py = world_obj.player_x, world_obj.player_y
+    # Fog of war radius
+    vision_radius = 2.5 + player.search_efficiency # Ojos de Búho gives +0.5, hachas give +0.6
+    
+    for row_y in range(grid_size):
+        for col_x in range(grid_size):
+            cell = grid[row_y][col_x]
+            
+            # Simple distance logic for Fog of War
+            dist = ((col_x - px)**2 + (row_y - py)**2)**0.5
+            
+            cx = x + col_x * cell_px
+            cy = y + row_y * cell_px
+            
+            if dist > vision_radius:
+                # Niebla de Guerra
+                pygame.draw.rect(surface, (40, 40, 40), (cx, cy, cell_px, cell_px))
+            else:
+                # Colors based on terrain
+                bg_color = (60, 90, 60)
+                if cell["type"] == "Agua": bg_color = (70, 130, 180)
+                elif cell["type"] == "Montaña": bg_color = (120, 110, 100)
+                elif cell["type"] == "Bosque": bg_color = (40, 70, 40)
+                elif cell["type"] == "Llanura": bg_color = (100, 140, 90)
+                
+                if cell["searched"]:
+                    bg_color = (max(20, bg_color[0]-30), max(20, bg_color[1]-30), max(20, bg_color[2]-30))
+                    
+                pygame.draw.rect(surface, bg_color, (cx, cy, cell_px, cell_px))
+                pygame.draw.rect(surface, (50, 50, 50), (cx, cy, cell_px, cell_px), width=1)
+                
+                # Draw special icons
+                if cell["icon"] and not cell["searched"]:
+                    icon_surf = font_small.render(cell["icon"], True, (200, 200, 200))
+                    surface.blit(icon_surf, (cx + 2, cy + 2))
+                    
+    # Draw Player Avatar/Dot on Map
+    p_rect = (x + px * cell_px + cell_px//2, y + py * cell_px + cell_px//2)
+    pygame.draw.circle(surface, (250, 100, 100), p_rect, cell_px//2 - 2)
+    pygame.draw.circle(surface, (255, 255, 255), p_rect, cell_px//2 - 2, width=1)
+

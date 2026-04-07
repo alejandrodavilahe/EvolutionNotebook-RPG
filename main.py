@@ -3,7 +3,7 @@ import sys
 import random
 import os
 from core.player import Player
-from core.ui import Button, draw_bar, draw_text_box, draw_inventory
+from core.ui import Button, draw_bar, draw_text_box, draw_inventory, draw_minimap
 from core.world import World
 
 # Colores estéticos limpios/minimalistas
@@ -113,6 +113,10 @@ def main():
     weather_pending_type = None
     weather_pending_time = 0
     
+    floating_texts = []
+    particles = []
+    screen_shake = 0
+    
     running = True
     while running:
         turn_taken = False
@@ -123,9 +127,34 @@ def main():
             # Eventos unicamente activos si estamos vivos
             if player.alive:
                 if game_state == "MAP":
+                    if event.type == pygame.KEYDOWN:
+                        dx, dy = 0, 0
+                        if event.key in [pygame.K_w, pygame.K_UP]: dy = -1
+                        elif event.key in [pygame.K_s, pygame.K_DOWN]: dy = 1
+                        elif event.key in [pygame.K_a, pygame.K_LEFT]: dx = -1
+                        elif event.key in [pygame.K_d, pygame.K_RIGHT]: dx = 1
+                        
+                        if dx != 0 or dy != 0:
+                            nx, ny = world.player_x + dx, world.player_y + dy
+                            if 0 <= nx < world.grid_size and 0 <= ny < world.grid_size:
+                                world.player_x, world.player_y = nx, ny
+                                cell = world.grid[ny][nx]
+                                cost_e = 4 if cell["type"] == "Agua" else 2
+                                pas_msg = player.pass_turn({"hunger": 1, "thirst": 1, "energy": cost_e})
+                                current_message = f"Te mueves a: {cell['type']}. Energía -{cost_e}. {pas_msg}"
+                                turn_taken = True
+                    
                     if btn_search.handle_event(event):
-                        pas_msg = player.search()
-                        evt = world.generate_search_event()
+                        cell = world.grid[world.player_y][world.player_x]
+                        if cell["searched"]:
+                            current_message = "Ya te encuentras en un área explorada. ¡Debes moverte (WASD)!"
+                        else:
+                            cell["searched"] = True
+                            pas_msg = player.search()
+                            if cell["special"] == "Mineral": evt = {"type": "mineral", "data": {"name": "Yacimiento expuesto", "tool_req": "Pico de Hueso", "item": "Piedra", "amt": 5}}
+                            elif cell["special"] == "Planta": evt = {"type": "resource", "data": {"name": "Flora expuesta", "amount": 20, "stat": "hunger", "item": "Fibra", "item_amt": 2, "herb": "Ajenjo", "herb_amt": 1}}
+                            elif cell["special"] == "Enemigo Fuerte": evt = {"type": "enemy", "data": {"name": "Guardián de Zona", "dmg": 30, "hp": 55, "drops": {"Huesos": (1,2)}}}
+                            else: evt = world.generate_search_event()
                         if evt["type"] == "nothing":
                             current_message = "Buscaste exhaustivamente pero no encontraste nada útil."
                         elif evt["type"] == "resource":
@@ -270,6 +299,9 @@ def main():
                         en_name = current_enemy["name"]
                         # Tu turno
                         current_enemy["hp"] -= player.base_dmg
+                        screen_shake = 5
+                        floating_texts.append({"text": f"-{player.base_dmg}", "x": 600, "y": 200, "color": (200, 50, 50), "life": 40})
+                        for _ in range(8): particles.append({"x": 600, "y": 200, "vx": random.uniform(-4, 4), "vy": random.uniform(-4, 4), "color": (200, 50, 50), "life": 30})
                         if current_enemy["hp"] <= 0:
                             if en_name == "Jefe Tribal Alpha":
                                 player.is_chief = True
@@ -289,6 +321,10 @@ def main():
                         else:
                             # Turno enemigo
                             recibido = player.take_enemy_hit(en_name, current_enemy["dmg"], 1.0)
+                            if recibido > 0:
+                                screen_shake = 10
+                                floating_texts.append({"text": f"-{recibido}", "x": 500, "y": 300, "color": (250, 0, 0), "life": 50})
+                                for _ in range(12): particles.append({"x": 500, "y": 300, "vx": random.uniform(-5, 5), "vy": random.uniform(-5, 5), "color": (250, 0, 0), "life": 40})
                             if player.alive:
                                 current_message = f"Hiciste {player.base_dmg} de daño. ¡El {en_name} sangra pero sobrevive! Te embiste por {recibido} de daño."
                                 
@@ -315,6 +351,7 @@ def main():
                         if pending_biome:
                             world.current_biome = pending_biome
                             world.current_location = "Zona Abierta"
+                            world.generate_grid_for_biome(pending_biome)
                             current_message = f"Pasaron los días... Bienvenidos al nuevo bioma: {pending_biome}. {pas_msg}"
                         else:
                             world.current_location = pending_landmark
@@ -513,23 +550,19 @@ def main():
                 
             current_message += w_msg
 
-        # Renderizado de Paisaje y Fondo
+        # Renderizado de Paisaje con Game Juice Screen Shake
+        if screen_shake > 0:
+            shake_offset_x = random.randint(-5, 5)
+            shake_offset_y = random.randint(-5, 5)
+            screen_shake -= 1
+        else:
+            shake_offset_x, shake_offset_y = 0, 0
+            
         screen.fill(BG_COLOR)
         
-        bio = world.current_biome
-        if bio == "Desierto":
-            pygame.draw.polygon(screen, (240, 230, 200), [(0, 480), (300, 390), (600, 440), (800, 350), (800, 600), (0, 600)])
-            pygame.draw.circle(screen, (250, 220, 140), (650, 150), 40)
-        elif bio == "Selva Tropical" or bio == "Pantano Manglar":
-            pygame.draw.polygon(screen, (200, 230, 200), [(0, 400), (200, 350), (450, 420), (800, 300), (800, 600), (0, 600)])
-            pygame.draw.rect(screen, (170, 210, 170) if bio == "Selva Tropical" else (160, 180, 160), (0, 500, 800, 100))
-        elif bio == "Tundra" or bio == "Picos Alpinos":
-            pygame.draw.polygon(screen, (230, 245, 255), [(0, 300), (150, 150), (350, 320), (550, 120), (800, 350), (800, 600), (0, 600)])
-        elif bio == "Erial Volcánico":
-            pygame.draw.polygon(screen, (200, 180, 180), [(0, 500), (200, 450), (400, 300), (500, 460), (800, 420), (800, 600), (0, 600)])
-            pygame.draw.line(screen, (220, 80, 80), (400, 300), (450, 600), 10)
-        else: # Bosques, Praderas
-            pygame.draw.polygon(screen, (215, 235, 205), [(0, 450), (400, 400), (800, 420), (800, 600), (0, 600)])
+        # Superposición de la matriz minimapa
+        if game_state in ["MAP", "ENCOUNTER", "DECISION", "OPPORTUNITY"]:
+            draw_minimap(screen, world, player, font_main, font_small, 400 + shake_offset_x, 100 + shake_offset_y, 300)
 
         # Renderizado de Textos Principales y Localizacion
         title_surf = font_title.render(f"Gen {player.generation} - {player.evolution_stage} [ERA {world.era}]", True, TEXT_COLOR)
@@ -757,6 +790,26 @@ def main():
                 btn_perk_eff.draw(screen)
                 btn_perk_res.draw(screen)
                 btn_reincarnate.draw(screen)
+
+        # ACTUALIZACION Y DIBUJO DE GAME JUICE
+        for ft in floating_texts[:]:
+            ft["y"] -= 1.5
+            ft["life"] -= 1
+            if ft["life"] <= 0: floating_texts.remove(ft)
+            else:
+                alpha = min(255, max(0, ft["life"] * 5))
+                f_surf = font_main.render(ft["text"], True, ft["color"])
+                f_surf.set_alpha(alpha)
+                screen.blit(f_surf, (ft["x"], ft["y"]))
+                
+        for pt in particles[:]:
+            pt["x"] += pt["vx"]
+            pt["y"] += pt["vy"]
+            pt["vy"] += 0.2  # Gravedad
+            pt["life"] -= 1
+            if pt["life"] <= 0: particles.remove(pt)
+            else:
+                pygame.draw.circle(screen, pt["color"], (int(pt["x"]), int(pt["y"])), max(1, pt["life"]//10))
 
         pygame.display.flip()
         clock.tick(60)

@@ -142,6 +142,55 @@ class World:
         self.camp_level = 0
         self.era = 1
         
+        self.grid_size = 20
+        self.player_x = self.grid_size // 2
+        self.player_y = self.grid_size // 2
+        self.grid = []
+        self.generate_grid_for_biome(self.current_biome)
+
+    def generate_grid_for_biome(self, biome_idx):
+        self.grid = []
+        biome_data = BIOMES[biome_idx]
+        
+        for y in range(self.grid_size):
+            row = []
+            for x in range(self.grid_size):
+                roll = random.randint(1, 100)
+                cell_type = "Llanura"
+                cell_icon = "¨"
+                special = None
+                
+                # Basic terrain structure based on chance
+                if roll < biome_data["water_chance"]:
+                    cell_type = "Agua"
+                    cell_icon = "≈"
+                elif roll < biome_data["water_chance"] + 15: # Arbitrary tree chance
+                    cell_type = "Bosque"
+                    cell_icon = "♠"
+                elif roll > 100 - biome_data["mineral_chance"]:
+                    cell_type = "Montaña"
+                    cell_icon = "▲"
+                    
+                # Seed obvious materials
+                rng_special = random.randint(1, 100)
+                if rng_special < 5:
+                    special = "Mineral"
+                    cell_icon = "💎"
+                elif rng_special < 10 and cell_type == "Bosque":
+                    special = "Planta"
+                    cell_icon = "🌿"
+                elif rng_special < 12 and cell_type != "Agua":
+                    special = "Enemigo Fuerte"
+                    cell_icon = "☠️"
+                    
+                row.append({"type": cell_type, "icon": cell_icon, "searched": False, "special": special})
+            self.grid.append(row)
+            
+        # Clear spawn point
+        self.grid[self.player_y][self.player_x]["type"] = "Llanura"
+        self.grid[self.player_y][self.player_x]["icon"] = "⛺"
+        self.grid[self.player_y][self.player_x]["searched"] = True
+        
     def get_weather_events(self):
         return WEATHER_EVENTS.get(self.current_biome, [])
         
