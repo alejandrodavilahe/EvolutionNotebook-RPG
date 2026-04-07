@@ -159,7 +159,10 @@ def draw_minimap(surface, world_obj, player, font_main, font_small, x, y, map_px
                     pygame.draw.circle(surface, (100, 255, 100), (cx + cell_px//2, cy + cell_px//2), 2)
                     
     # Draw Player Avatar/Dot on Map
-    p_rect = (x + px * cell_px + cell_px//2, y + py * cell_px + cell_px//2)
+    p_center_x = x + px * cell_px + cell_px // 2
+    p_center_y = y + py * cell_px + cell_px // 2
+    p_rect = pygame.Rect(p_center_x - cell_px // 2, p_center_y - cell_px // 2, cell_px, cell_px)
+    
     # Silueta de cazador esquemático
     pygame.draw.line(surface, (50, 50, 55), (p_rect.centerx, p_rect.top+2), (p_rect.centerx, p_rect.bottom-2), 2) # Cuerpo
     pygame.draw.line(surface, (50, 50, 55), (p_rect.left, p_rect.centery), (p_rect.right, p_rect.centery), 1) # Brazos
