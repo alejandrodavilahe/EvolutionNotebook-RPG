@@ -287,14 +287,14 @@ def draw_character_profile(surface, player, x, y):
         pygame.draw.line(surface, body_color, (x+40, y+95), (x+50, y+145), 2) # Pierna 2
 
     # Equipo Visible
-    weapon = player.equipment.get("Weapon", "Puños")
-    if weapon != "Puños":
+    weapon = player.equipment.get("Weapon")
+    if weapon and weapon != "Puños":
         # Dibujar lanza o cuchillo en la mano (x+20, y+75 aprox)
         pygame.draw.line(surface, (100, 70, 40), (x+15, y+60), (x+10, y+110), 2) # Palo
         pygame.draw.polygon(surface, (150, 150, 160), [(x+15, y+50), (x+10, y+65), (x+20, y+65)], 0) # Punta
 
-    body_gear = player.equipment.get("Body", "Nada")
-    if body_gear != "Nada":
+    body_gear = player.equipment.get("Body")
+    if body_gear and body_gear != "Nada":
         # Dibujar túnica/peto
         pygame.draw.rect(surface, (120, 90, 70), (x+30, y+45, 20, 45), 1)
         if "Escamoso" in body_gear:
@@ -459,6 +459,7 @@ def draw_trophy_sketches(surface, trophies):
         elif "Jefe" in t:
             pygame.draw.line(surface, sketch_color, (tx+10, ty), (tx+10, ty+25), 1) # Lanza
             pygame.draw.polygon(surface, sketch_color, [(tx+5, ty+5), (tx+15, ty+5), (tx+10, ty-5)], 1) # Corona/Adorno
+def draw_ink_splotches(surface, seed):
     import random
     rng = random.Random(seed)
     sw, sh = surface.get_size()
