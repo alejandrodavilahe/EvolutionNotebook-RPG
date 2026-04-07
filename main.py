@@ -670,8 +670,8 @@ def main():
                 if game_state != "PANTHEON":
                     if btn_restart.handle_event(event):
                         game_state = "PANTHEON"
-                        # Generate or fetch points upon entering Pantheon (Rebalanced)
-                        pts_gained = (player.turn * 15) + (50 if player.era > 1 else 0)
+                        # Generate or fetch points upon entering Pantheon (Rebalanced V2)
+                        pts_gained = (player.turn * 3) + (len(player.discovered_concepts) * 25) + (len(player.trophies) * 50) + (world.era * 200)
                         try:
                             import json
                             with open("savegame.json", "r") as f:
@@ -688,32 +688,32 @@ def main():
                         player.save_pantheon(pantheon_data["puntos"], pk, gen)
                 else:
                     if btn_perk_meta.handle_event(event) and "METABOLISMO" not in pantheon_data["perks"]:
-                        if pantheon_data["puntos"] >= 30:
-                            pantheon_data["puntos"] -= 30
+                        if pantheon_data["puntos"] >= 150:
+                            pantheon_data["puntos"] -= 150
                             pantheon_data["perks"].append("METABOLISMO")
                             player.save_pantheon(pantheon_data["puntos"], pantheon_data["perks"], pantheon_data["generation"])
                             
                     if btn_perk_skin.handle_event(event) and "PIEL_GRUESA" not in pantheon_data["perks"]:
-                        if pantheon_data["puntos"] >= 50:
-                            pantheon_data["puntos"] -= 50
+                        if pantheon_data["puntos"] >= 300:
+                            pantheon_data["puntos"] -= 300
                             pantheon_data["perks"].append("PIEL_GRUESA")
                             player.save_pantheon(pantheon_data["puntos"], pantheon_data["perks"], pantheon_data["generation"])
                             
                     if btn_perk_dmg.handle_event(event) and "BRAZOS_GORILA" not in pantheon_data["perks"]:
-                        if pantheon_data["puntos"] >= 60:
-                            pantheon_data["puntos"] -= 60
+                        if pantheon_data["puntos"] >= 450:
+                            pantheon_data["puntos"] -= 450
                             pantheon_data["perks"].append("BRAZOS_GORILA")
                             player.save_pantheon(pantheon_data["puntos"], pantheon_data["perks"], pantheon_data["generation"])
 
                     if btn_perk_eff.handle_event(event) and "OJOS_BUHO" not in pantheon_data["perks"]:
-                        if pantheon_data["puntos"] >= 45:
-                            pantheon_data["puntos"] -= 45
+                        if pantheon_data["puntos"] >= 250:
+                            pantheon_data["puntos"] -= 250
                             pantheon_data["perks"].append("OJOS_BUHO")
                             player.save_pantheon(pantheon_data["puntos"], pantheon_data["perks"], pantheon_data["generation"])
 
                     if btn_perk_res.handle_event(event) and "ANTICUERPOS" not in pantheon_data["perks"]:
-                        if pantheon_data["puntos"] >= 80:
-                            pantheon_data["puntos"] -= 80
+                        if pantheon_data["puntos"] >= 600:
+                            pantheon_data["puntos"] -= 600
                             pantheon_data["perks"].append("ANTICUERPOS")
                             player.save_pantheon(pantheon_data["puntos"], pantheon_data["perks"], pantheon_data["generation"])
                             
@@ -1107,19 +1107,19 @@ def main():
                 
                 # Check button states
                 if "METABOLISMO" in pantheon_data["perks"]: btn_perk_meta.text = "MUTAR: Súper Metabolismo [ADQUIRIDO]"
-                else: btn_perk_meta.text = "MUTAR: Súper Metabolismo (+40 Max Hambre/Sed) [Coste: 30 PA]"
+                else: btn_perk_meta.text = "MUTAR: Súper Metabolismo (+40 Max Hambre/Sed) [Coste: 150 PA]"
                 
                 if "PIEL_GRUESA" in pantheon_data["perks"]: btn_perk_skin.text = "MUTAR: Piel Rinoceronte [ADQUIRIDA]"
-                else: btn_perk_skin.text = "MUTAR: Piel Rinoceronte (+5 Defensa Perpetua) [Coste: 50 PA]"
+                else: btn_perk_skin.text = "MUTAR: Piel Rinoceronte (+5 Defensa Perpetua) [Coste: 300 PA]"
                 
                 if "BRAZOS_GORILA" in pantheon_data["perks"]: btn_perk_dmg.text = "MUTAR: Brazos de Gorila [ADQUIRIDA]"
-                else: btn_perk_dmg.text = "MUTAR: Brazos de Gorila (+3 Daño Base Perpetuo) [Coste: 60 PA]"
+                else: btn_perk_dmg.text = "MUTAR: Brazos de Gorila (+3 Daño Base Perpetuo) [Coste: 450 PA]"
 
                 if "OJOS_BUHO" in pantheon_data["perks"]: btn_perk_eff.text = "MUTAR: Ojos de Búho [ADQUIRIDA]"
-                else: btn_perk_eff.text = "MUTAR: Ojos de Búho (Menos cansancio/Más suerte explorando) [Coste: 45 PA]"
+                else: btn_perk_eff.text = "MUTAR: Ojos de Búho (Menos cansancio/Más suerte explorando) [Coste: 250 PA]"
 
                 if "ANTICUERPOS" in pantheon_data["perks"]: btn_perk_res.text = "MUTAR: Anticuerpos [ADQUIRIDA]"
-                else: btn_perk_res.text = "MUTAR: Anticuerpos (Inmunidad Intestinal) [Coste: 80 PA]"
+                else: btn_perk_res.text = "MUTAR: Anticuerpos (Inmunidad Intestinal) [Coste: 600 PA]"
                 
                 btn_perk_meta.draw(screen)
                 btn_perk_skin.draw(screen)
@@ -1144,16 +1144,16 @@ def main():
                 
                 # Check button states
                 if "METABOLISMO" in pantheon_data["perks"]: btn_perk_meta.text = "MUTAR: Súper Metabolismo [ADQUIRIDO]"
-                else: btn_perk_meta.text = "MUTAR: Súper Metabolismo (+40 Max Hambre/Sed) [Coste: 30 PA]"
+                else: btn_perk_meta.text = "MUTAR: Súper Metabolismo (+40 Max Hambre/Sed) [Coste: 150 PA]"
                 
                 if "PIEL_GRUESA" in pantheon_data["perks"]: btn_perk_skin.text = "MUTAR: Piel Rinoceronte [ADQUIRIDA]"
-                else: btn_perk_skin.text = "MUTAR: Piel Rinoceronte (+5 Defensa Perpetua) [Coste: 50 PA]"
+                else: btn_perk_skin.text = "MUTAR: Piel Rinoceronte (+5 Defensa Perpetua) [Coste: 300 PA]"
                 
                 if "BRAZOS_GORILA" in pantheon_data["perks"]: btn_perk_dmg.text = "MUTAR: Brazos de Gorila [ADQUIRIDA]"
-                else: btn_perk_dmg.text = "MUTAR: Brazos de Gorila (+3 Daño Base Perpetuo) [Coste: 60 PA]"
+                else: btn_perk_dmg.text = "MUTAR: Brazos de Gorila (+3 Daño Base Perpetuo) [Coste: 450 PA]"
 
                 if "OJOS_BUHO" in pantheon_data["perks"]: btn_perk_eff.text = "MUTAR: Ojos de Búho [ADQUIRIDA]"
-                else: btn_perk_eff.text = "MUTAR: Ojos de Búho (Menos cansancio/Más suerte explorando) [Coste: 45 PA]"
+                else: btn_perk_eff.text = "MUTAR: Ojos de Búho (Menos cansancio/Más suerte explorando) [Coste: 250 PA]"
 
                 if "ANTICUERPOS" in pantheon_data["perks"]: btn_perk_res.text = "MUTAR: Anticuerpos [ADQUIRIDA]"
                 else: btn_perk_res.text = "MUTAR: Anticuerpos (Inmunidad Intestinal) [Coste: 80 PA]"
