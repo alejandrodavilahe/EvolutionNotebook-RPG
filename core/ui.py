@@ -31,44 +31,42 @@ class Button:
 
 # draw_bar consolidated at the end of the file to avoid redundancy
 
-def draw_text_box(surface, text, x, y, width, height, font, bg_color=(240, 240, 240), text_color=(50, 50, 50)):
+def draw_text_box(surface, text, x, y, width, height, font, bg_color=(240, 240, 240, 200), text_color=(25, 30, 45), alpha=255):
+    # Efecto "Ink Soak": El texto aparece gradualmente
     rect = pygame.Rect(x, y, width, height)
-    pygame.draw.rect(surface, bg_color, rect, border_radius=6)
-    pygame.draw.rect(surface, (150, 150, 150), rect, width=2, border_radius=6)
     
-    # Text wrapping logic para que no se salga del recuadro
-    words_by_line = []
-    for chunk in str(text).split('\n'):
-        if not chunk:
-            words_by_line.append([])
-        else:
-            words_by_line.append(chunk.split(' '))
-            
+    # Fondo del cuadro con transparencia suave
+    bg_surface = pygame.Surface((width, height), pygame.SRCALPHA)
+    pygame.draw.rect(bg_surface, bg_color, (0, 0, width, height), border_radius=8)
+    # Borde "trazado a mano"
+    pygame.draw.rect(bg_surface, (50, 50, 55, 100), (0, 0, width, height), width=2, border_radius=8)
+    surface.blit(bg_surface, (x, y))
+    
+    words = text.split(' ')
     lines = []
-    for line_words in words_by_line:
-        if not line_words:
-            lines.append("")
-            continue
-            
-        current_line = ""
-        for word in line_words:
-            test_line = current_line + word + " "
-            if font.size(test_line)[0] < width - 20: # Margen de padding
-                current_line = test_line
-            else:
-                if current_line:
-                    lines.append(current_line.strip())
-                current_line = word + " "
-        if current_line:
-            lines.append(current_line.strip())
-            
-    total_height = len(lines) * font.get_height()
-    start_y = rect.centery - total_height // 2
+    current_line = ""
+    for word in words:
+        test_line = current_line + word + " "
+        if font.size(test_line)[0] < width - 40:
+            current_line = test_line
+        else:
+            lines.append(current_line)
+            current_line = word + " "
+    lines.append(current_line)
     
-    for i, line in enumerate(lines):
-        text_surf = font.render(line, True, text_color)
-        text_rect = text_surf.get_rect(centerx=rect.centerx, top=start_y + i * font.get_height())
-        surface.blit(text_surf, text_rect)
+    yy = y + 20
+    for line in lines:
+        if line:
+            # Render con Alpha dinámico (Simula tinta secándose)
+            txt_surf = font.render(line, True, text_color)
+            if alpha < 255:
+                txt_surf.set_alpha(alpha)
+                # Pequeño desenfoque/sombra si la tinta está "fresca"
+                if alpha < 180:
+                    shadow = font.render(line, True, (text_color[0], text_color[1], text_color[2], 50))
+                    surface.blit(shadow, (x+21, yy+1))
+            surface.blit(txt_surf, (x + 20, yy))
+        yy += font.get_linesize()
 
 def draw_inventory(surface, x, y, width, height, inventory_dict, font_small, title_font):
     rect = pygame.Rect(x, y, width, height)
@@ -359,57 +357,106 @@ def draw_hallucinations(surface, sanity, seed):
         if sanity < 30: # Ojos rojos si esta muy mal
             pygame.draw.circle(surface, (150, 0, 0), (hx+size, hy+size//2), 3)
             
-def draw_notebook_bg(surface, time_of_day="Día", ancestral_art=[], blood_intensity=0, turn_seed=0, weather=None, entries=[], font=None, color=(245, 245, 235)):
+def draw_ambient_flicker(surface, time_ticks):
+    # Capa de luz de fogata (warm orange glow)
+    import math
+    sw, sh = surface.get_size()
+    flicker = 15 + int(math.sin(time_ticks / 200) * 10) + int(math.cos(time_ticks / 500) * 5)
+    
+    # Overlay sutil en los bordes
+    overlay = pygame.Surface((sw, sh), pygame.SRCALPHA)
+    # Gradiente radial o esquinas (más eficiente)
+    glow_color = (255, 160, 50, flicker)
+    # Solo en las esquinas para no saturar el centro
+    pygame.draw.circle(overlay, glow_color, (0, 0), 150)
+    pygame.draw.circle(overlay, glow_color, (sw, 0), 100)
+    pygame.draw.circle(overlay, glow_color, (0, sh), 200)
+    pygame.draw.circle(overlay, glow_color, (sw, sh), 120)
+    surface.blit(overlay, (0, 0))
+
+def draw_discovery_sketches(surface, discoveries):
+    # Bocetos en el margen izquierdo conforme descubrimos la era
+    sketch_color = (40, 40, 45, 120)
+    for idx, d in enumerate(discoveries):
+        dx = 20 + (idx % 2) * 25
+        dy = 250 + (idx // 2) * 50
+        if dy > 600: continue
+        
+        # Dibujos simples icónicos
+        if "Fuego" in d or "fire" in d:
+             pygame.draw.polygon(surface, sketch_color, [(dx, dy+15), (dx+10, dy), (dx+20, dy+15)], 1)
+             pygame.draw.line(surface, sketch_color, (dx+10, dy+5), (dx+10, dy+15), 1)
+        elif "Herramientas" in d:
+             pygame.draw.line(surface, sketch_color, (dx, dy), (dx+20, dy+20), 1)
+             pygame.draw.polygon(surface, sketch_color, [(dx+15, dy+15), (dx+25, dy+25), (dx+15, dy+25)], 1)
+        elif "Puntería" in d or "Arco" in d:
+             pygame.draw.arc(surface, sketch_color, (dx, dy, 20, 30), -1.5, 1.5, 1)
+             pygame.draw.line(surface, sketch_color, (dx+10, dy), (dx+10, dy+30), 1)
+
+def draw_notebook_bg(surface, time_now, ancestral_art, blood_intensity, turn, weather_active, entries, font, discoveries=[]):
     sw, sh = surface.get_size()
     
-    # Base color (Papel envejecido)
+    # Base color (Papel envejecido - Tono hueso)
+    color = (245, 245, 235)
     surface.fill(color)
     
-    # Capa 0: Arte Rupestre (Antepasados)
+    # Arte Rupestre
     draw_cave_art(surface, ancestral_art)
     
-    # Capa 1: Textura de papel (Líneas muy tenues y manchas)
+    # Líneas de libreta (Ink style sutil)
     for i in range(0, sh, 30):
         pygame.draw.line(surface, (225, 225, 215), (0, i), (sw, i), 1)
         
     # Margen izquierdo (Doble línea roja tenue)
-    pygame.draw.line(surface, (220, 170, 170), (70, 0), (70, sh), 1)
-    pygame.draw.line(surface, (220, 170, 170), (74, 0), (74, sh), 1)
+    pygame.draw.line(surface, (230, 180, 180, 120), (70, 0), (70, sh), 1)
+    pygame.draw.line(surface, (230, 180, 180, 120), (74, 0), (74, sh), 1)
     
-    # Capa 2: Notas de Crónica
-    if font and entries:
-        draw_chronicle_notes(surface, entries, font)
+    # Bocetos de descubrimiento en los márgenes
+    draw_discovery_sketches(surface, discoveries)
     
-    # Capa 3: Sangre de batalla
-    draw_blood_splatters(surface, blood_intensity, turn_seed)
+    # Capa 3: Sangre y Trophies
+    draw_chronicle_notes(surface, entries, font)
+    draw_blood_splatters(surface, blood_intensity, turn)
+    draw_trophy_sketches(surface, []) # Aquí irían trofeos de caza
     
-    # Capa 4: Efectos de Clima Físico
-    if weather:
-        draw_paper_weather_fx(surface, weather, turn_seed)
+    # Clima
+    if weather_active:
+        draw_paper_weather_fx(surface, weather_active, turn)
     
-    # Capa 5: Encuadernación de Cuero
+    # Encuadernación y Lomo
     draw_notebook_binding(surface)
     
-    # Capa 4: Sombra del lomo sobre el papel
+    # Sombra del lomo
     shadow = pygame.Surface((30, sh), pygame.SRCALPHA)
     for x in range(30):
-        alpha = int(80 * (1 - x/30))
+        alpha = int(100 * (1 - x/30)) # Sombra más intensa cerca del lomo
         pygame.draw.line(shadow, (0, 0, 0, alpha), (x, 0), (x, sh))
     surface.blit(shadow, (60, 0))
     
-    # Capa 5: Silueta del Personaje (Esquina Superior Derecha del área de dibujo)
-    # player_obj debe pasarse o manejarse en main, pero lo preparamos aquí si se desea
-    if time_of_day == "Atardecer":
+    # Esquina doblada animada (Paper Corner)
+    import math
+    corner_w = 40
+    # Wiggle sutil basado en el turno
+    wiggle = math.sin(turn * 0.5) * 5
+    corner_points = [(sw, sh), (sw - corner_w + wiggle, sh), (sw, sh - corner_w - wiggle)]
+    pygame.draw.polygon(surface, (220, 220, 210), corner_points)
+    pygame.draw.polygon(surface, (150, 150, 140), corner_points, 1) # Borde de la sombra de la esquina
+    
+    # Tintes de hora del día
+    if time_now == "Atardecer":
         tint = pygame.Surface((sw, sh), pygame.SRCALPHA)
-        tint.fill((255, 100, 0, 30)) # Naranja tenue
+        tint.fill((255, 100, 0, 35))
         surface.blit(tint, (0, 0))
-    elif time_of_day == "Noche":
+    elif time_now == "Noche":
         tint = pygame.Surface((sw, sh), pygame.SRCALPHA)
-        tint.fill((0, 0, 50, 60)) # Azul oscuro
+        tint.fill((0, 0, 50, 75))
         surface.blit(tint, (0, 0))
     
-    # Bordes "gastados" (Sombra interna)
-    pygame.draw.rect(surface, (200, 200, 190), (0, 0, sw, sh), width=10)
+    # Iluminación de hoguera (Premium Ambience)
+    draw_ambient_flicker(surface, pygame.time.get_ticks())
+    
+    # Bordes "gastados"
+    pygame.draw.rect(surface, (210, 210, 200), (0, 0, sw, sh), width=4)
 
 def draw_time_icon(surface, x, y, time_of_day, font):
     color = (200, 150, 50) # Sol
