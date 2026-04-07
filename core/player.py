@@ -67,6 +67,8 @@ class Player:
         self.follower_timer = 0 # Para produccion de recursos (Buffalo)
         
         self.torch_uses = 0
+        self.pot_uses = 0
+        self.arrows_fired = 0
         self.trophies = []
         self.ancestral_art = []
         self.active_buffs = [] # [{"name": "Lobo", "val": 8, "timer": 5}]
