@@ -260,7 +260,6 @@ def draw_cave_art(surface, ancestral_art):
             pygame.draw.line(surface, art_color, (sw//2+10, sh-100), (sw//2+10, sh-70), 5) # Pata
         elif art == "chief":
             pygame.draw.line(surface, art_color, (sw-150, 100), (sw-150, 180), 4) # Cuerpo
-            pygame.draw.line(surface, art_color, (sw-180, 140), (sw-120, 140), 2) # Brazos
         elif art == "fire":
             pygame.draw.polygon(surface, art_color, [(150, sh-100), (170, sh-140), (190, sh-100)], 0)
         elif art == "tame":
@@ -268,63 +267,74 @@ def draw_cave_art(surface, ancestral_art):
             pygame.draw.circle(surface, art_color, (sw-130, sh-100), 8, 2)
 
 def draw_character_profile(surface, player, x, y):
-    # Dibujo dinámico del protagonista en el cuaderno
-    # x, y es la esquina superior izquierda del área del personaje
-    body_color = (40, 45, 60) # Tinta oscura
+    # Boceto anatómico de estilo enciclopédico
+    body_color = (19, 30, 45) # Tinta carbón oscura
+    sketch_color = (60, 70, 90, 150) # Tinta diluida para guía
     
-    # Silueta Base según Era
+    # Proporciones según Era
     if player.era == 1:
-        # Encorvado (Neandertal)
-        pygame.draw.circle(surface, body_color, (x+40, y+30), 12, 2) # Cabeza
-        pygame.draw.lines(surface, body_color, False, [(x+40, y+42), (x+35, y+70), (x+45, y+100)], 3) # Espina
-        pygame.draw.line(surface, body_color, (x+35, y+50), (x+15, y+80), 2) # Brazo 1
-        pygame.draw.line(surface, body_color, (x+45, y+100), (x+30, y+140), 2) # Pierna 1
-        pygame.draw.line(surface, body_color, (x+45, y+100), (x+60, y+140), 2) # Pierna 2
+        # Neandertal: Cabeza grande, tronco ancho, piernas cortas
+        head_r = 14
+        trunk_w, trunk_h = 45, 60
+        leg_h = 45
+        posture_y = 10
     else:
-        # Erguido (Sapiens)
-        pygame.draw.circle(surface, body_color, (x+40, y+25), 10, 2) # Cabeza
-        pygame.draw.line(surface, body_color, (x+40, y+35), (x+40, y+95), 3) # Espina recta
-        pygame.draw.line(surface, body_color, (x+40, y+45), (x+20, y+75), 2) # Brazo 1
-        pygame.draw.line(surface, body_color, (x+40, y+45), (x+60, y+75), 2) # Brazo 2
-        pygame.draw.line(surface, body_color, (x+40, y+95), (x+30, y+145), 2) # Pierna 1
-        pygame.draw.line(surface, body_color, (x+40, y+95), (x+50, y+145), 2) # Pierna 2
+        # Sapiens: Más estilizado, recto
+        head_r = 11
+        trunk_w, trunk_h = 35, 75
+        leg_h = 55
+        posture_y = 0
 
-    # Equipo Visible
+    # 1. Dibujar Tronco (Volumen)
+    chest_rect = pygame.Rect(x + 40 - trunk_w//2, y + 45 + posture_y, trunk_w, trunk_h)
+    pygame.draw.ellipse(surface, body_color, chest_rect, 2)
+    # Sombreado Cross-hatch en el pecho
+    for i in range(5):
+        pygame.draw.line(surface, body_color, (chest_rect.left + i*8, chest_rect.top), (chest_rect.left + i*8 + 5, chest_rect.top + 10), 1)
+
+    # 2. Cabeza (Estudio anatómico)
+    head_pos = (x + 40, y + 25 + posture_y)
+    pygame.draw.circle(surface, body_color, head_pos, head_r, 2)
+    if player.era == 1:
+        # Arco superciliar prominente
+        pygame.draw.line(surface, body_color, (head_pos[0]-head_r, head_pos[1]), (head_pos[0]+head_r, head_pos[1]), 1)
+
+    # 3. Extremidades (Poligonales para grosor)
+    # Brazo Izquierdo (Sujetando arma)
+    arm_pts = [(x+40-trunk_w//2, y+55+posture_y), (x+15, y+80), (x+20, y+85), (x+40-trunk_w//2+5, y+60+posture_y)]
+    pygame.draw.polygon(surface, body_color, arm_pts, 1)
+    
+    # Piernas
+    pygame.draw.line(surface, body_color, (x+40-10, y+45+trunk_h+posture_y), (x+30, y+45+trunk_h+leg_h+posture_y), 2)
+    pygame.draw.line(surface, body_color, (x+40+10, y+45+trunk_h+posture_y), (x+50, y+45+trunk_h+leg_h+posture_y), 2)
+
+    # Equipo Visible (Ajustado a la nueva anatomía)
     weapon = player.equipment.get("Weapon")
     if weapon and weapon != "Puños":
-        # Dibujar mango
-        color_w = (40, 40, 40) if "Obsidiana" in weapon else (130, 90, 60)
-        pygame.draw.line(surface, color_w, (x+15, y+60), (x+10, y+110), 3) # Palo
-        # Punta
-        tip_color = (30, 30, 30) if "Obsidiana" in weapon else (220, 220, 210)
-        pygame.draw.polygon(surface, tip_color, [(x+15, y+50), (x+8, y+68), (x+22, y+68)], 0)
+        color_w = (25, 30, 45) if "Obsidiana" in weapon else (110, 80, 50)
+        # La mano está aprox en (x+15, y+80)
+        pygame.draw.line(surface, color_w, (x+15, y+65), (x+10, y+120), 3) # Mango
+        tip_color = (20, 20, 20) if "Obsidiana" in weapon else (210, 210, 200)
+        pygame.draw.polygon(surface, tip_color, [(x+15, y+55), (x+7, y+75), (x+23, y+75)], 0)
 
     body_gear = player.equipment.get("Body")
     if body_gear and body_gear != "Nada":
-        # Dibujar túnica/peto
-        pygame.draw.rect(surface, (120, 90, 70), (x+25, y+45, 30, 50), 1)
+        gear_rect = chest_rect.inflate(4, 4)
+        pygame.draw.rect(surface, (100, 75, 55), gear_rect, 1)
         if "Escamoso" in body_gear:
-            for i in range(4):
-                pygame.draw.line(surface, (100, 120, 100), (x+25, y+50+i*10), (x+55, y+55+i*10), 2)
+            for i in range(trunk_h // 12):
+                pygame.draw.arc(surface, (80, 100, 80), [gear_rect.x, gear_rect.y + i*12, trunk_w, 15], 3.14, 0, 2)
         elif "Invierno" in body_gear:
-            pygame.draw.rect(surface, (140, 130, 120), (x+22, y+42, 36, 56), 2) # Mas grueso
+            pygame.draw.rect(surface, (130, 120, 110), gear_rect.inflate(6, 6), 2)
 
     head_gear = player.equipment.get("Head")
     if head_gear == "Casco de Hueso":
-        pygame.draw.arc(surface, (240, 240, 230), [x+28, y+15, 24, 24], 0, 3.14, 3)
+        pygame.draw.arc(surface, (235, 235, 230), [head_pos[0]-head_r-2, head_pos[1]-head_r-2, head_r*2+4, head_r*2+4], 0, 3.14, 3)
 
-    boots_gear = player.equipment.get("Boots")
-    if boots_gear == "Botas de Piel":
-        pygame.draw.rect(surface, (90, 60, 40), (x+25, y+135, 12, 12))
-        pygame.draw.rect(surface, (90, 60, 40), (x+45, y+135, 12, 12))
-
-    # Feedback de Estado (Heridas)
+    # Heridas de Tinta Roja
     if player.hp < player.max_hp * 0.5:
-        # Tachones de sangre (tinta roja)
-        for _ in range(3):
-            rx = x + 30 + (player.turn % 15)
-            ry = y + 50 + (player.turn % 25)
-            pygame.draw.line(surface, (180, 50, 50), (rx, ry), (rx+15, ry+5), 2)
+        for i in range(3):
+            pygame.draw.line(surface, (160, 40, 40), (chest_rect.centerx-10, chest_rect.centery+i*5), (chest_rect.centerx+10, chest_rect.centery+i*5+3), 2)
 
 def draw_blood_splatters(surface, blood_intensity, turn_seed):
     import random
