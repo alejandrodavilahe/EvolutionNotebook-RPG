@@ -17,8 +17,8 @@ BIOMES = {
 LANDMARKS = {
     "Selva Tropical": ["Cenote Antiguo", "Árbol Milenario", "Cascada de Selva", "Río Fangoso"],
     "Sabana": ["Baobab Gigante", "Arroyo Seco", "Llanura Alta", "Oasis Menor"],
-    "Pradera": ["Lago Sereno", "Colina de Viento", "Madriguera Oculta", "Arroyo Abierto"],
-    "Desierto": ["Oasis Profundo", "Cañón Rocoso", "Cueva Lúgubre", "Mesa Elevada"],
+    "Pradera": ["Lago Sereno", "Colina de Viento", "Madriguera Oculta", "Arroyo Abierto", "Círculo de Piedras Ancestrales"],
+    "Desierto": ["Oasis Profundo", "Cañón Rocoso", "Cueva Lúgubre", "Mesa Elevada", "Esqueleto de Gigante"],
     "Taiga": ["Claro de Coníferas", "Lago de Taiga", "Cueva Rocosa", "Río Frío"],
     "Matorral": ["Barranco Espinoso", "Zarza Mayor", "Cueva Polvorienta", "Lecho de Roca"],
     "Bosque Templado": ["Arroyo Fresco", "Cueva del Oso", "Claro Iluminado", "Roble Anciano"],
@@ -45,7 +45,10 @@ TRANSITION_PATHS = {
 OPPORTUNITIES = [
     {"name": "Restos Frescos", "desc": "Restos de una fiera (Carroña). ¿Tomar la valiosa carne cruda? (Riesgo asqueroso).", "cost": {"energy": 10}, "reward": {"Carne Cruda": (3, 6), "Huesos": (1, 3)}, "risk_disease": "Infección", "risk_chance": 0.20, "special": None},
     {"name": "Árbol Frutal Silvestre", "desc": "Gran árbol exótico. ¿saltar intensamente y recolectar?", "cost": {"energy": 15}, "reward": {}, "boost": {"hunger": 50, "thirst": 30}, "risk_disease": None, "risk_chance": 0, "special": None},
-    {"name": "Humo en el Horizonte", "desc": "Ves a otros humanos rústicos... ¿Acercarte para unirte? (Riesgo 30%: Caníbales Emboscadores).", "cost": {"energy": 20}, "reward": {}, "risk_disease": None, "risk_chance": 0, "special": "TRIBU"}
+    {"name": "Humo en el Horizonte", "desc": "Ves a otros humanos rústicos... ¿Acercarte para unirte? (Riesgo 30%: Caníbales Emboscadores).", "cost": {"energy": 20}, "reward": {}, "risk_disease": None, "risk_chance": 0, "special": "TRIBU"},
+    {"name": "Cazador Herido", "desc": "Un hombre gime en el suelo. ¿Ayudarlo con recursos? (Gasto: Carne Asada x1). Puede unirse a ti.", "cost": {"energy": 5}, "reward": {}, "special": "FOLLOWER_CHANCE"},
+    {"name": "Ruinas de Campamento", "desc": "Un fuego apagado y pieles rotas. ¿Buscar restos entre las cenizas?", "cost": {"energy": 10}, "reward": {"Fibra": (2, 5), "Pedernal": (1, 3), "Piel": (0, 1)}, "special": None},
+    {"name": "Colmena Silvestre", "desc": "Miel dorada gotea de un tronco ruidoso. ¿Intentar extraerla?", "cost": {"energy": 15}, "reward": {"Miel": (1, 2)}, "boost": {"hunger": 20, "thirst": 10}, "risk_disease": "Infección", "risk_chance": 0.15, "special": None}
 ]
 
 PLANTS = {
@@ -146,6 +149,7 @@ class World:
         self.player_x = self.grid_size // 2
         self.player_y = self.grid_size // 2
         self.grid = []
+        self.active_events = [] # [{"x": x, "y": y, "name": "Manada", "timer": 5}]
         self.generate_grid_for_biome(self.current_biome)
 
     def generate_grid_for_biome(self, biome_idx):
@@ -183,7 +187,17 @@ class World:
                     special = "Enemigo Fuerte"
                     cell_icon = "☠️"
                     
-                row.append({"type": cell_type, "icon": cell_icon, "searched": False, "special": special, "has_plot": False, "plot_growth": 0})
+                row.append({
+                    "type": cell_type, 
+                    "icon": cell_icon, 
+                    "searched": False, 
+                    "special": special, 
+                    "has_camp": False,
+                    "has_plot": False, 
+                    "plot_growth": 0,
+                    "trap_loot": None,
+                    "has_totem": False
+                })
             self.grid.append(row)
             
         # Clear spawn point
@@ -255,3 +269,65 @@ class World:
             return {"type": "resource", "data": {"name": "Fuente de Agua", "amount": random.randint(20, 40), "stat": "thirst"}}
             
         return {"type": "nothing", "data": None}
+
+    def update_traps(self):
+        # Llamado al pasar el turno en el main
+        for row in self.grid:
+            for cell in row:
+                if cell.get("trap"):
+                    cell["trap_turns"] = cell.get("trap_turns", 0) + 1
+                    # Probabilidad de captura despues de 5 turnos
+                    if cell["trap_turns"] >= 10 and not cell.get("trap_loot"):
+                        import random
+                        if random.random() < 0.4:
+                            if cell["trap"] == "Fosa":
+                                cell["trap_loot"] = random.choice(["Carne Cruda", "Piel", "Huesos"])
+                            elif cell["trap"] == "Nasa":
+                                cell["trap_loot"] = "Carne Cruda" # Representa pescado
+                                
+    def update_world_events(self):
+        # Decay de eventos activos
+        new_events = []
+        for ev in self.active_events:
+            ev["timer"] -= 1
+            if ev["timer"] > 0:
+                new_events.append(ev)
+            else:
+                # Al terminar el evento, la celda vuelve a ser normal (Llanura)
+                self.grid[ev["y"]][ev["x"]]["special"] = None
+                self.grid[ev["y"]][ev["x"]]["icon"] = "¨"
+        self.active_events = new_events
+        
+        # Probabilidad de spawn de nuevo evento (Migración)
+        if random.random() < 0.05 and len(self.active_events) < 2:
+            ex = random.randint(0, self.grid_size-1)
+            ey = random.randint(0, self.grid_size-1)
+            if self.grid[ey][ex]["type"] != "Agua":
+                e_name = random.choice(["Manada de Mamuts", "Gran Migración Búfalo"])
+                self.active_events.append({"x": ex, "y": ey, "name": e_name, "timer": 15})
+                self.grid[ey][ex]["special"] = "EVENTO"
+                self.grid[ey][ex]["icon"] = "🐘" if "Mamut" in e_name else "🐂"
+                                
+    def to_dict(self):
+        return {
+            "current_biome": self.current_biome,
+            "current_location": self.current_location,
+            "has_camp": self.has_camp,
+            "camp_level": self.camp_level,
+            "era": self.era,
+            "player_x": self.player_x,
+            "player_y": self.player_y,
+            "grid": self.grid,
+            "active_events": self.active_events
+        }
+
+    def from_dict(self, data):
+        self.current_biome = data.get("current_biome", "Pradera")
+        self.current_location = data.get("current_location", "Zona Abierta")
+        self.has_camp = data.get("has_camp", False)
+        self.camp_level = data.get("camp_level", 0)
+        self.era = data.get("era", 1)
+        self.player_x = data.get("player_x", 10)
+        self.player_y = data.get("player_y", 10)
+        self.grid = data.get("grid", [])
+        self.active_events = data.get("active_events", [])

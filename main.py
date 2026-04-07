@@ -8,15 +8,16 @@ from core.world import World
 
 # Colores estéticos limpios/minimalistas
 BG_COLOR = (245, 245, 240)  # Tono hueso / libreta clara
-TEXT_COLOR = (40, 40, 40)
-BTN_COLOR = (220, 220, 215)
+TEXT_COLOR = (25, 30, 45) # Carbon/Marino muy oscuro (Realista)
+BTN_COLOR = (240, 235, 230)
 BTN_HOVER = (200, 200, 195)
 
 BAR_COLORS = {
-    "hp": (220, 90, 90),       # Rojo desaturado
-    "hunger": (210, 150, 70),  # Naranja desaturado
-    "thirst": (90, 160, 210),  # Azul desaturado
-    "energy": (230, 210, 80)   # Amarillo quemado
+    "hp": (200, 50, 50),
+    "hunger": (200, 150, 50),
+    "thirst": (50, 150, 200),
+    "energy": (100, 100, 100),
+    "sanity": (180, 100, 200)
 }
 
 def get_next_equip(current, possible, inv):
@@ -27,6 +28,70 @@ def get_next_equip(current, possible, inv):
         return available[(idx + 1) % len(available)]
     except ValueError:
         return available[0]
+
+def save_game(player, world):
+    import json
+    data = {
+        "player": player.to_dict(),
+        "world": world.to_dict()
+    }
+    with open("current_run.json", "w") as f:
+        json.dump(data, f)
+
+def load_game():
+    import json
+    import os
+    if os.path.exists("current_run.json"):
+        try:
+            with open("current_run.json", "r") as f:
+                return json.load(f)
+        except: return None
+    return None
+
+class WeatherParticle:
+    def __init__(self, screen_width, screen_height, weather_type):
+        self.sw = screen_width
+        self.sh = screen_height
+        self.type = weather_type
+        self.reset()
+        
+    def reset(self):
+        self.x = random.randint(0, self.sw)
+        self.y = random.randint(-self.sh, 0)
+        if self.type == "Lluvia Torrencial":
+            self.vy = random.randint(10, 15)
+            self.vx = -2
+            self.color = (100, 100, 255, 150)
+            self.length = random.randint(10, 20)
+        elif self.type == "Ventisca de Nieve" or self.type == "Tormenta Polar" or self.type == "Ventisca de Hielo":
+            self.vy = random.randint(2, 5)
+            self.vx = random.randint(1, 3)
+            self.color = (255, 255, 255, 200)
+            self.length = random.randint(2, 4)
+        elif self.type == "Tormenta de Arena" or self.type == "Lluvia de Ceniza":
+            self.vy = random.randint(1, 3)
+            self.vx = random.randint(5, 10)
+            self.color = (200, 150, 100, 100) if "Arena" in self.type else (100, 100, 100, 150)
+            self.length = random.randint(15, 30)
+        else:
+            self.vy = 5
+            self.vx = 0
+            self.color = (200, 200, 200, 50)
+            self.length = 5
+
+    def update(self):
+        self.y += self.vy
+        self.x += self.vx
+        if self.y > self.sh or self.x > self.sw or self.x < 0:
+            self.reset()
+
+    def draw(self, surface):
+        if self.type == "Lluvia Torrencial":
+            pygame.draw.line(surface, self.color, (self.x, self.y), (self.x + self.vx, self.y + self.length), 1)
+        elif "Ventisca" in self.type or "Polar" in self.type:
+            pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.length // 2)
+        else:
+            pygame.draw.line(surface, self.color, (self.x, self.y), (self.x + self.length, self.y + self.vy), 1)
 
 def main():
     pygame.init()
@@ -50,6 +115,15 @@ def main():
 
     player = Player()
     world = World()
+    
+    # Check for saved run
+    save_data = load_game()
+    if save_data:
+        # Prompt logic would be nice, but for now we just auto-load if it exists
+        # In a real game we would have a Menu state
+        player.from_dict(save_data["player"])
+        world.from_dict(save_data["world"])
+
     game_state = "MAP"
     current_message = f"Te encuentras en el bioma: {world.current_biome}."
     current_enemy = None
@@ -67,11 +141,21 @@ def main():
     btn_craft_cancel = Button(510, 615, 220, 50, "Cancelar", font_small, (150, 150, 150), TEXT_COLOR, (130, 130, 130))
 
     btn_fight_atk = Button(50, 555, 220, 50, "Atacar", font_main, (210, 100, 100), TEXT_COLOR, (190, 80, 80))
-    btn_fight_def = Button(280, 555, 220, 50, "Cubrirse", font_main, (140, 160, 220), TEXT_COLOR, (120, 140, 200))
-    btn_flee = Button(510, 555, 220, 50, "Huir (-Ene)", font_main, (180, 180, 150), TEXT_COLOR, (160, 160, 130))
+    btn_shoot = Button(280, 555, 220, 50, "Disparar Arco", font_main, (140, 180, 140), TEXT_COLOR, (120, 160, 120))
+    btn_fight_def = Button(510, 555, 220, 50, "Cubrirse", font_main, (140, 160, 220), TEXT_COLOR, (120, 140, 200))
+    btn_flee = Button(50, 615, 220, 50, "Huir (-Ene)", font_main, (180, 180, 150), TEXT_COLOR, (160, 160, 130))
 
     btn_travel = Button(50, 555, 330, 50, "Avanzar a la Zona", font_main, (160, 200, 160), TEXT_COLOR, (140, 180, 140))
     btn_ignore = Button(400, 555, 330, 50, "Ignorar / Seguir", font_main, (200, 180, 160), TEXT_COLOR, (180, 160, 140))
+    btn_tribe = Button(180, 480, 160, 25, "Tribu", font_small, (150, 150, 200), TEXT_COLOR, (130, 130, 180))
+    btn_honey = Button(350, 370, 190, 25, "Comer Miel", font_small, (255, 220, 100), TEXT_COLOR, (230, 200, 80))
+    btn_trap_fosa = Button(50, 310, 160, 25, "Trampa Fosa", font_small, (140, 100, 80), TEXT_COLOR, (120, 80, 60))
+    btn_trap_nasa = Button(220, 310, 160, 25, "Nasa Pesca", font_small, (80, 140, 180), TEXT_COLOR, (60, 120, 160))
+    btn_harvest_trap = Button(50, 310, 330, 25, "📥 Recoger Trampa", font_small, (100, 200, 100), TEXT_COLOR, (80, 180, 80))
+    
+    btn_meditate = Button(50, 340, 160, 25, "🧘 Ritual Base", font_small, (200, 200, 250), TEXT_COLOR, (180, 180, 230))
+    btn_offer_wolf = Button(220, 340, 160, 25, "🐺 Rit. Lobo", font_small, (130, 200, 130), TEXT_COLOR, (110, 180, 110))
+    btn_offer_buffalo = Button(390, 340, 160, 25, "🐂 Rit. Búfalo", font_small, (200, 180, 150), TEXT_COLOR, (180, 160, 130))
 
     btn_opp_take = Button(50, 555, 330, 50, "Aprovechar (-Ene)", font_main, (210, 200, 120), TEXT_COLOR, (190, 180, 100))
     
@@ -99,15 +183,16 @@ def main():
     GEAR_TYPES = {
         "Head": ["Casco de Hueso"],
         "Body": ["Abrigo Básico", "Peto Escamoso", "Abrigo de Invierno"],
-        "Weapon": ["Cuchillo Óseo", "Cuchillo de Pedernal", "Hacha Primitiva", "Pico de Hueso", "Lanza Caza", "Lanza de Obsidiana"],
+        "Weapon": ["Cuchillo Óseo", "Cuchillo de Pedernal", "Hacha Primitiva", "Pico de Hueso", "Lanza Caza", "Lanza de Obsidiana", "Lanza de Piedra"],
         "Boots": ["Botas de Piel"]
     }
     
     pending_landmark = ""
     pending_biome = None
     pending_opp = None
-    pantheon_data = {"puntos": 0, "perks": [], "generation": 1}
+    pantheon_data = {"puntos": 0, "perks": [], "generation": 1, "ancestral_art": []}
     
+    blood_intensity = 0
     crafting_selected = []
     inv_slots = []
     
@@ -119,7 +204,7 @@ def main():
     
     floating_texts = []
     particles = []
-    screen_shake = 0
+    weather_particles = []
     
     running = True
     while running:
@@ -169,6 +254,8 @@ def main():
                                         current_message += " (Tragaste un bicho asqueroso de la cuenca... contrajiste Disentería al usar tus manos)"
                         elif evt["type"] == "enemy":
                             current_enemy = evt["data"]
+                            current_enemy["max_hp"] = current_enemy["hp"]
+                            player.arrows_fired = 0
                             current_message = f"¡PELIGRO! Un {current_enemy['name']} salvaje (Daño: {current_enemy['dmg']})."
                             game_state = "ENCOUNTER"
                         elif evt["type"] == "landmark":
@@ -195,9 +282,20 @@ def main():
                             
                     if btn_rest.handle_event(event):
                         player.rest(world.camp_level)
+                        if world.camp_level == 0:
+                            player.sanity = max(0, player.sanity - 10) # Dormir mal baja sanidad
+                        else:
+                            player.sanity = min(player.max_sanity, player.sanity + 20) # Camping cura mente
+                        
+                        # Art Milestone: First Camp
+                        if "fire" not in player.ancestral_art: player.ancestral_art.append("fire")
+                            
                         turn_taken = True
                         if world.camp_level > 0:
-                            current_message = f"Descansas profundamente y cocinas en tu Campamento Lvl {world.camp_level}."
+                            if turn_taken:
+                                save_game(player, world)
+                                world.update_traps()
+                            current_message = f"Descansas profundamente en tu Campamento Lvl {world.camp_level}. ¡Partida Guardada!"
                         else:
                             current_message = "Has descansado en la intemperie desprotegido."
                             
@@ -266,6 +364,8 @@ def main():
                                 player.era = 2
                                 player.evolution_stage = "Asentado (Era 2)"
                                 current_message = "¡GRAN HITO! Levantaste tu primera Forja Humana. Avanzaste a la ERA DE LOS METALES (Era 2)."
+                                player.add_chronicle("Al fin, el secreto del fuego es mío. La piedra se rinde al calor.")
+                                if "hand" not in player.ancestral_art: player.ancestral_art.append("hand")
                             else:
                                 current_message = "Requiere [Pedernal x5] y [Huesos x10] para hacer la Forja de Piedra e inaugurar la Era."
 
@@ -289,6 +389,15 @@ def main():
                                 else:
                                     current_message = "Gánate el respeto como Jefe donando 5 de Carne Cruda a tu Tribu."
                             
+                    if player.inventory.get("Miel", 0) > 0:
+                        if btn_honey.handle_event(event):
+                            player.inventory["Miel"] -= 1
+                            player.heal_stat("hunger", 20)
+                            player.heal_stat("thirst", 10)
+                            player.sanity = min(player.max_sanity, player.sanity + 15)
+                            current_message = f"Dulzura nutritiva: +20H +10S +15Sanidad. (Miel restante: {player.inventory.get('Miel', 0)})"
+                            turn_taken = True
+                            
                 elif game_state == "ENCOUNTER":
                     if btn_fight_atk.handle_event(event):
                         en_name = current_enemy["name"]
@@ -297,12 +406,21 @@ def main():
                         screen_shake = 5
                         floating_texts.append({"text": f"-{player.base_dmg}", "x": 600, "y": 200, "color": (200, 50, 50), "life": 40})
                         for _ in range(8): particles.append({"x": 600, "y": 200, "vx": random.uniform(-4, 4), "vy": random.uniform(-4, 4), "color": (200, 50, 50), "life": 30})
+                        
                         if current_enemy["hp"] <= 0:
+                            # Finalizacion de combate Melee
                             if en_name == "Jefe Tribal Alpha":
                                 player.is_chief = True
                                 player.evolution_stage = "Supremo Tribal"
+                                if "Jefe Tribal" not in player.trophies: player.trophies.append("Jefe Tribal")
+                                if "chief" not in player.ancestral_art: player.ancestral_art.append("chief")
+                                player.discover("Espiritualidad")
+                                player.add_chronicle("El Jefe ha caído. Ahora el clan escucha mis susurros.")
                                 current_message = "¡LO CORTASTE AL EJE! La tribu te jura lealtad. Eres Jefe."
                             else:
+                                if en_name not in player.trophies and en_name in ["Lobo", "Jaguar", "Sabertooth", "Búfalo Solitario", "Mamut", "Oso"]:
+                                    player.trophies.append(en_name)
+                                    
                                 dropped = []
                                 for i_name, (min_amt, max_amt) in current_enemy.get("drops", {}).items():
                                     amt = random.randint(min_amt, max_amt)
@@ -310,18 +428,66 @@ def main():
                                         player.add_to_inventory(i_name, amt)
                                         dropped.append(f"{amt}x {i_name}")
                                 player.heal_stat("hunger", 15)
-                                drops_txt = ", ".join(dropped)
-                                current_message = f"¡Masacraste al {en_name}! Ganaste: {drops_txt}"
+                                
+                                # Recuperacion de Flechas RNG (aunque sea melee, pudiste disparar antes)
+                                recov = 0
+                                for _ in range(player.arrows_fired):
+                                    if random.random() < 0.5: recov += 1
+                                if recov > 0:
+                                    player.inventory["Flechas"] = player.inventory.get("Flechas", 0) + recov
+                                    dropped.append(f"{recov}x Flechas (Rescatadas)")
+                                
+                                current_message = f"¡Masacraste al {en_name}! Ganaste: {', '.join(dropped)}"
                             game_state = "MAP"
                         else:
-                            # Turno enemigo
+                            # Turno enemigo (Contraataque Melee)
                             recibido = player.take_enemy_hit(en_name, current_enemy["dmg"], 1.0)
+                            if recibido > 15: blood_intensity = min(100, blood_intensity + recibido)
                             if recibido > 0:
                                 screen_shake = 10
                                 floating_texts.append({"text": f"-{recibido}", "x": 500, "y": 300, "color": (250, 0, 0), "life": 50})
                                 for _ in range(12): particles.append({"x": 500, "y": 300, "vx": random.uniform(-5, 5), "vy": random.uniform(-5, 5), "color": (250, 0, 0), "life": 40})
                             if player.alive:
                                 current_message = f"Hiciste {player.base_dmg} de daño. ¡El {en_name} sangra pero sobrevive! Te embiste por {recibido} de daño."
+                            
+                    if player.inventory.get("Arco Primitivo", 0) > 0 and player.inventory.get("Flechas", 0) > 0:
+                        if btn_shoot.handle_event(event):
+                            en_name = current_enemy["name"]
+                            dmg = int(player.base_dmg * 1.5)
+                            current_enemy["hp"] -= dmg
+                            player.inventory["Flechas"] -= 1
+                            player.arrows_fired += 1
+                            screen_shake = 5
+                            floating_texts.append({"text": f"-{dmg}", "x": 600, "y": 200, "color": (150, 200, 150), "life": 40})
+                            for _ in range(5): particles.append({"x": 600, "y": 200, "vx": random.uniform(3, 8), "vy": random.uniform(-2, 2), "color": (150, 200, 150), "life": 30})
+                            
+                            if current_enemy["hp"] <= 0:
+                                # Finalizacion de combate Rango
+                                if en_name not in player.trophies and en_name in ["Lobo", "Jaguar", "Sabertooth", "Búfalo Solitario", "Mamut", "Oso"]:
+                                    player.trophies.append(en_name)
+                                    
+                                dropped = []
+                                for i_name, (min_amt, max_amt) in current_enemy.get("drops", {}).items():
+                                    amt = random.randint(min_amt, max_amt)
+                                    if amt > 0:
+                                        player.add_to_inventory(i_name, amt)
+                                        dropped.append(f"{amt}x {i_name}")
+                                player.heal_stat("hunger", 15)
+                                
+                                recov = 0
+                                for _ in range(player.arrows_fired):
+                                    if random.random() < 0.5: recov += 1
+                                if recov > 0:
+                                    player.inventory["Flechas"] = player.inventory.get("Flechas", 0) + recov
+                                    dropped.append(f"{recov}x Flechas (Rescatadas)")
+                                    
+                                current_message = f"¡Abatiste al {en_name} desde lejos! Ganaste: {', '.join(dropped)}"
+                                game_state = "MAP"
+                            else:
+                                # Turno enemigo (Contraataque Rango - menos daño al estar lejos)
+                                recibido = player.take_enemy_hit(en_name, current_enemy["dmg"], 0.8)
+                                if player.alive:
+                                    current_message = f"Disparaste una flecha al {en_name} por {dmg}. ¡Se acerca furioso y te golpea por {recibido}!"
                                 
                     if player.inventory.get("Correa de Cuero", 0) > 0 and current_enemy["hp"] < current_enemy.get("max_hp", 100) * 0.4:
                         if btn_tame.handle_event(event):
@@ -412,6 +578,17 @@ def main():
                                 world.current_location = "Asentamiento Tribal"
                                 current_message = "Muestras sumisión dando ramas y te adhieren a su eslabón más bajo social. Tienes Aldea."
                                 game_state = "MAP"
+                        elif pending_opp.get("special") == "FOLLOWER_CHANCE":
+                            if player.inventory.get("Carne Asada", 0) >= 1:
+                                player.inventory["Carne Asada"] -= 1
+                                if random.random() < 0.7:
+                                    player.follower = {"species": "Cazador Leal", "bonus_type": "DMG", "bonus_val": 10}
+                                    current_message = "¡El cazador se recupera y decide seguirte para pagar su deuda!"
+                                else:
+                                    current_message = "El cazador te agradece y se aleja cojeando hacia el horizonte."
+                            else:
+                                current_message = "No tienes comida para ayudarlo... lo dejas a su suerte."
+                            game_state = "MAP"
                         else:
                             game_state = "MAP"
                         turn_taken = True
@@ -430,15 +607,26 @@ def main():
                                 elif len(crafting_selected) < 2:
                                     crafting_selected.append(slot["item"])
                                 
-                    if btn_craft_mix.handle_event(event):
-                        current_message = player.manual_craft(crafting_selected)
-                        game_state = "MAP"
-                        turn_taken = True
-                        crafting_selected = []
                     if btn_craft_cancel.handle_event(event):
                         current_message = "Adversión retractada. Vuelves al mapa."
                         game_state = "MAP"
                         crafting_selected = []
+                    
+                    if btn_craft_mix.handle_event(event):
+                        if not crafting_selected:
+                            current_message = "No has seleccionado materiales."
+                        else:
+                            # Intentar crafteo manual por combinación
+                            res = player.manual_craft(crafting_selected)
+                            current_message = res
+                            if "EXITOSO" in res:
+                                turn_taken = True
+                                game_state = "MAP"
+                                crafting_selected = []
+                            # Chequeo de descubrimiento por combinacion
+                            if "Milenrama" in crafting_selected and "Agua" in crafting_selected:
+                                if player.discover("Curación"):
+                                    current_message += "\n¡HITO! Has descubierto los principios de la Medicina Ancestral."
                         
                 elif game_state == "EQUIP":
                     if btn_eq_back.handle_event(event):
@@ -506,15 +694,31 @@ def main():
                             player.save_pantheon(pantheon_data["puntos"], pantheon_data["perks"], pantheon_data["generation"])
                             
                     if btn_reincarnate.handle_event(event):
+                        old_art = player.ancestral_art[:] # Mantener arte ancestral
                         player = Player()
+                        player.ancestral_art = old_art
                         world = World()
                         game_state = "MAP"
-                        current_message = f"Has reencarnado (Generación {player.generation}). Un nuevo comienzo..."
+                        current_message = f"Has reencarnado (Generación {player.generation}). Un nuevo comienzo con el legado de tus ancestros..."
                         
 
         if turn_taken and player.alive and game_state == "MAP":
             w_msg = ""
+            if player.turn % 2 == 0:
+                world.update_traps()
+                world.update_world_events()
             
+            # Chronicle de Supervivencia
+            if player.turn % 20 == 0:
+                entries = [
+                    "El hambre es un lobo que nunca duerme.",
+                    "He visto estrellas caer sobre la montaña.",
+                    "El tiempo corre como el agua entre mis manos.",
+                    "Mis manos están endurecidas por la roca."
+                ]
+                player.add_chronicle(random.choice(entries))
+                
+            blood_intensity = max(0, blood_intensity - 5)
             # Hipotermia en biomas frios
             if world.current_biome in ["Tundra", "Taiga"] and not "Hipotermia" in player.sickness:
                 if player.defense < 8 and random.random() < 0.15:
@@ -531,6 +735,7 @@ def main():
                 if weather_timer <= 0:
                     w_msg += f"\n{weather_active} se ha disipado. Todo vuelve a la normalidad."
                     weather_active = None
+                    weather_particles = []
                 else:
                     if world.camp_level == 0:
                         player.hp -= 15
@@ -550,6 +755,9 @@ def main():
                         weather_pending_type = ev["name"]
                         weather_pending_time = random.randint(ev["min_t"], ev["max_t"])
                         w_msg += f"\n⚠️ {ev['warning']}"
+                        
+                        # Init particles for the new weather
+                        weather_particles = [WeatherParticle(screen_width, screen_height, weather_pending_type) for _ in range(100)]
             
             # Crecimiento de Huertos
             for row in world.grid:
@@ -579,11 +787,47 @@ def main():
         else:
             shake_offset_x, shake_offset_y = 0, 0
             
-        screen.fill(BG_COLOR)
+        # Update weather
+        for p in weather_particles:
+            p.update()
+
+        from core.ui import draw_notebook_bg, draw_ink_splotches, draw_time_icon, draw_trophy_sketches, draw_ritual_smoke
+        time_now = player.get_time_of_day()
+        draw_notebook_bg(screen, time_now, player.ancestral_art, blood_intensity, player.turn, weather_active, player.chronic_entries, font_small)
         
-        # Superposición de la matriz minimapa
+        # Capas de Humo Ritual si hay buffs activos
+        if player.active_buffs:
+            draw_ritual_smoke(screen, player.turn)
+            
+        draw_ink_splotches(screen, player.turn + player.generation)
+        draw_trophy_sketches(screen, player.trophies)
+        
+        from core.ui import draw_hallucinations, draw_character_profile
+        draw_hallucinations(screen, player.sanity, player.turn)
+        draw_character_profile(screen, player, 800, 100) # Lado derecho, arriba de stats
+        
+        draw_time_icon(screen, 30, 20, time_now, font_main)
+        if player.torch_uses > 0 and time_now == "Noche":
+            torch_txt = font_small.render(f"🔥 Antorcha: {player.torch_uses}t", True, (255, 150, 0))
+            screen.blit(torch_txt, (30, 60))
+            
+        # Draw Active Buffs
+        bx, by = 600, 420
+        for b in player.active_buffs:
+            b_txt = font_small.render(f"✨ {b['name']}: {b['timer']}t", True, (100, 255, 150))
+            screen.blit(b_txt, (bx, by))
+            by += 20
+        
+        # Superposición de la matriz minimapa (Ajustado por el lomo de cuero)
         if game_state in ["MAP", "ENCOUNTER", "DECISION", "OPPORTUNITY"]:
-            draw_minimap(screen, world, player, font_main, font_small, 40 + shake_offset_x, 120 + shake_offset_y, 250)
+            draw_minimap(screen, world, player, font_main, font_small, 75 + shake_offset_x, 120 + shake_offset_y, 230)
+
+        def take_enemy_hit(self, enemy_name, dmg_raw, multiplier=1.0):
+            # Wrapper local para main para trigger de sangre visual
+            nonlocal blood_intensity
+            recibido = player.take_enemy_hit(enemy_name, dmg_raw, multiplier)
+            if recibido > 15: blood_intensity = min(100, blood_intensity + recibido)
+            return recibido
 
         # Renderizado de Textos Principales y Localizacion
         title_surf = font_title.render(f"Gen {player.generation} - {player.evolution_stage} [ERA {world.era}]", True, TEXT_COLOR)
@@ -593,39 +837,27 @@ def main():
         
         turn_surf = font_main.render(f"Días de Supervivencia: {player.turn}", True, TEXT_COLOR)
         
+        # Puntaje de Descubrimiento
+        disc_surf = font_main.render(f"Puntaje Descubrimiento: {len(player.discovered_concepts) * 10}", True, (200, 200, 50))
+        
         screen.blit(title_surf, (30, 20))
         screen.blit(loc_surf, (30, 50))
         screen.blit(turn_surf, (30, 80))
+        screen.blit(disc_surf, (30, 110))
 
-        # Dibujo rudimentario del jugador usando formas limpias y minimalistas
-        center_x, center_y = 500, 300
-        
-        # Color dinámico por estado de salud
-        base_color = TEXT_COLOR
-        if "Envenenamiento" in player.sickness:
-            base_color = (60, 180, 60) # Verde lima oscuro
-        elif "Hipotermia" in player.sickness:
-            base_color = (130, 180, 250) # Azul hieloso
-        elif "Disentería" in player.sickness:
-            base_color = (200, 200, 90) # Amarillo amarillento
-        
-        pygame.draw.circle(screen, base_color, (center_x, center_y), 30, width=3) # Cabeza
-        pygame.draw.line(screen, base_color, (center_x, center_y + 30), (center_x, center_y + 100), 3) # Torso
-        pygame.draw.line(screen, base_color, (center_x, center_y + 50), (center_x - 30, center_y + 80), 3) # Brazo izq
-        pygame.draw.line(screen, base_color, (center_x, center_y + 50), (center_x + 30, center_y + 80), 3) # Brazo der
-        pygame.draw.line(screen, base_color, (center_x, center_y + 100), (center_x - 20, center_y + 150), 3) # Pierna izq
-        pygame.draw.line(screen, base_color, (center_x, center_y + 100), (center_x + 20, center_y + 150), 3) # Pierna der
+        # El dibujo central del jugador ahora es manejado por draw_character_profile (llamado arriba)
+        # pero podemos dejar una version "sketchy" central si el usuario prefiere
+        pass
         
         # Render Seguidores Visual
         if player.follower:
-            f_color = (150, 150, 150)
-            fx, fy = center_x - 70, center_y + 40
-            pygame.draw.circle(screen, f_color, (fx, fy), 15, width=2) # Cabeza mascota
-            pygame.draw.line(screen, f_color, (fx, fy+15), (fx, fy+40), 2) # Cuerpo mascota
-            pygame.draw.line(screen, f_color, (fx, fy+40), (fx-10, fy+55), 2) # Patas
-            pygame.draw.line(screen, f_color, (fx, fy+40), (fx+10, fy+55), 2)
-            f_name = font_small.render(player.follower["species"], True, f_color)
-            screen.blit(f_name, (fx - 30, fy - 25))
+            f_color = (100, 100, 110)
+            fx, fy = 810, 250
+            pygame.draw.circle(screen, f_color, (fx, fy), 10, width=1) # Cabeza mascota
+            pygame.draw.line(screen, f_color, (fx, fy+10), (fx-10, fy+25), 1) 
+            pygame.draw.line(screen, f_color, (fx, fy+10), (fx+10, fy+25), 1)
+            f_name = font_small.render(f"🐾 {player.follower['species']}", True, f_color)
+            screen.blit(f_name, (fx - 20, fy - 20))
         
         # Superposicion de piezas modulares del RPG Equipment System
         bg_eq = player.equipment.get("Body")
@@ -653,6 +885,12 @@ def main():
             pygame.draw.line(screen, (220, 220, 220), (center_x + 20, center_y + 30), (center_x + 40, center_y + 30), 8) # Cabezal
         elif wp_eq == "Cuchillo de Pedernal" or wp_eq == "Cuchillo Óseo":
             pygame.draw.line(screen, (180, 180, 170), (center_x + 30, center_y + 80), (center_x + 35, center_y + 60), 4)
+        elif wp_eq == "Lanza de Piedra":
+            pygame.draw.line(screen, (120, 100, 80), (center_x + 20, center_y + 110), (center_x + 45, center_y - 10), 5) # Mango
+            pygame.draw.polygon(screen, (100, 100, 100), [(center_x + 43, center_y - 10), (center_x + 50, center_y - 20), (center_x + 38, center_y - 15)]) # Punta piedra
+        elif wp_eq == "Antorcha":
+            pygame.draw.line(screen, (100, 70, 40), (center_x + 30, center_y + 80), (center_x + 40, center_y + 40), 6) # Palo
+            pygame.draw.circle(screen, (255, 150, 50), (center_x + 42, center_y + 35), 8) # Fuego
 
         # Renderizado de Estadísticas a un lado
         stats_x = 740
@@ -660,6 +898,24 @@ def main():
         draw_bar(screen, stats_x, 210, 220, 20, player.hunger, player.max_hunger, BAR_COLORS["hunger"], "Hambre (Comida)", font_small)
         draw_bar(screen, stats_x, 270, 220, 20, player.thirst, player.max_thirst, BAR_COLORS["thirst"], "Sed (Agua)", font_small)
         draw_bar(screen, stats_x, 330, 220, 20, player.energy, player.max_energy, BAR_COLORS["energy"], "Energía", font_small)
+        
+        # UI Sanity Dinámica
+        if player.era > 1 or player.sanity < 90:
+            draw_bar(screen, stats_x, 390, 220, 20, player.sanity, player.max_sanity, BAR_COLORS["sanity"], "Sanidad", font_small)
+            
+        # Draw weather particles (overlay)
+        for p in weather_particles:
+            p.draw(screen)
+
+        # Update one-off particles
+        for p in particles[:]:
+            p["x"] += p["vx"]
+            p["y"] += p["vy"]
+            p["life"] -= 1
+            if p["life"] <= 0:
+                particles.remove(p)
+            else:
+                pygame.draw.circle(screen, p["color"], (int(p["x"]), int(p["y"])), 3)
 
         # Renderizado interactivo y sub-paneles
         # UI global que siempre se ve
@@ -689,6 +945,63 @@ def main():
                         btn_boil.draw(screen)
                         
                 cell = world.grid[world.player_y][world.player_x]
+                
+                # Narrative Fluff basado en Bioma
+                if turn_taken:
+                    fluff = ""
+                    if cell["type"] == "Agua": fluff = "\nEl agua murmura historias antiguas a tus pies..."
+                    elif cell["type"] == "Bosque": fluff = "\nLas sombras de los árboles parecen vigilarte."
+                    elif world.current_biome == "Tundra": fluff = "\nEl viento corta como un cuchillo de obsidiana el aire gélido."
+                    current_message += fluff
+
+                # Gestión de Rituales en Campamento
+                if world.has_camp:
+                    btn_meditate.draw(screen)
+                    if btn_meditate.handle_event(event):
+                        player.sanity = min(player.max_sanity, player.sanity + 25)
+                        current_message = "Meditas frente al fuego. Tu mente se aclara. (+25 Sanidad)"
+                        # Art Milestone: Meditation
+                        if "fire" not in player.ancestral_art: player.ancestral_art.append("fire")
+                        turn_taken = True
+                    
+                    if player.inventory.get("Ofrenda de Lobo", 0) > 0:
+                        btn_offer_wolf.draw(screen)
+                        if btn_offer_wolf.handle_event(event):
+                            player.inventory["Ofrenda de Lobo"] -= 1
+                            player.active_buffs.append({"name": "Lobo", "val": 8, "timer": 8})
+                            current_message = "Ritual del Lobo completado. Tu danza infunde ferocidad. (+8 Daño, 8 Turnos)"
+                            turn_taken = True
+                    
+                    if player.inventory.get("Ofrenda de Búfalo", 0) > 0:
+                        btn_offer_buffalo.draw(screen)
+                        if btn_offer_buffalo.handle_event(event):
+                            player.inventory["Ofrenda de Búfalo"] -= 1
+                            player.active_buffs.append({"name": "Búfalo", "val": 15, "timer": 10})
+                            current_message = "Ritual del Búfalo completado. Piel curtida y voluntad de acero. (+15 Defensa, 10 Turnos)"
+                            turn_taken = True
+                # Gestión de Trampas
+                if cell.get("trap") and cell.get("trap_loot"):
+                    btn_harvest_trap.draw(screen)
+                    if btn_harvest_trap.handle_event(event):
+                        player.add_to_inventory(cell["trap_loot"], 1)
+                        current_message = f"¡Trampa activada! Obtuviste: {cell['trap_loot']}. La trampa se ha roto."
+                        cell["trap"] = None
+                        cell["trap_loot"] = None
+                        cell["trap_turns"] = 0
+                elif not cell.get("trap") and not cell.get("has_camp"):
+                    if player.inventory.get("Trampa de Fosa", 0) > 0 and cell["type"] != "Agua":
+                        btn_trap_fosa.draw(screen)
+                        if btn_trap_fosa.handle_event(event):
+                            player.inventory["Trampa de Fosa"] -= 1
+                            cell["trap"] = "Fosa"
+                            current_message = "Has excavado una fosa y la has cubierto de hojas."
+                    if player.inventory.get("Nasa de Pesca", 0) > 0 and cell["type"] == "Agua":
+                        btn_trap_nasa.draw(screen)
+                        if btn_trap_nasa.handle_event(event):
+                            player.inventory["Nasa de Pesca"] -= 1
+                            cell["trap"] = "Nasa"
+                            current_message = "Has colocado la nasa de pesca sumergida entre juncos."
+
                 if not cell["has_plot"] and world.has_camp and player.inventory.get("Huerto de Piedra", 0) > 0:
                     btn_plant.draw(screen)
                     if btn_plant.handle_event(event):
@@ -753,10 +1066,12 @@ def main():
                 
             elif game_state == "ENCOUNTER":
                 # Draw Enemy HP overlay
-                en_hp_txt = font_main.render(f"PUNTOS DE VIDA RIVAL: {current_enemy.get('hp', 0)} HP", True, (250, 100, 100))
+                en_hp_txt = font_main.render(f"VIDA RIVAL: {current_enemy.get('hp', 0)} / {current_enemy.get('max_hp', 100)}", True, (150, 50, 50))
                 screen.blit(en_hp_txt, (50, 420))
                 
                 btn_fight_atk.draw(screen)
+                if player.inventory.get("Arco Primitivo", 0) > 0 and player.inventory.get("Flechas", 0) > 0:
+                    btn_shoot.draw(screen)
                 btn_fight_def.draw(screen)
                 btn_flee.draw(screen)
                 
