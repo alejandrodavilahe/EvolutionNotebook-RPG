@@ -123,7 +123,7 @@ def main():
         # Soporte universal para .mp3 o .wav
         sound_path = "assets/paper_flip.mp3" if os.path.exists("assets/paper_flip.mp3") else "assets/paper_flip.wav"
         paper_sound = pygame.mixer.Sound(sound_path)
-        paper_sound.set_volume(0.5)
+        paper_sound.set_volume(0.12)
     except:
         paper_sound = None
 
