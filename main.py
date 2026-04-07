@@ -3,7 +3,7 @@ import sys
 import random
 import os
 from core.player import Player
-from core.ui import Button, draw_bar, draw_text_box, draw_inventory, draw_minimap
+from core.ui import Button, draw_bar, draw_text_box, draw_inventory, draw_minimap, draw_character_profile, draw_hallucinations
 from core.world import World
 
 # Colores estéticos limpios/minimalistas
@@ -804,6 +804,7 @@ def main():
             
         draw_ink_splotches(screen, player.turn + player.generation)
         draw_trophy_sketches(screen, player.trophies)
+        draw_hallucinations(screen, player.sanity, player.turn)
         draw_character_profile(screen, player, 780, 40)
         
         draw_time_icon(screen, 120, 20, time_now, font_main)
