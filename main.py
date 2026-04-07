@@ -116,6 +116,17 @@ def main():
     player = Player()
     world = World()
     
+    # --- Inicialización de Efectos Premium ---
+    current_message_timer = pygame.time.get_ticks()
+    prev_message = ""
+    try:
+        # Soporte universal para .mp3 o .wav
+        sound_path = "assets/paper_flip.mp3" if os.path.exists("assets/paper_flip.mp3") else "assets/paper_flip.wav"
+        paper_sound = pygame.mixer.Sound(sound_path)
+        paper_sound.set_volume(0.5)
+    except:
+        paper_sound = None
+
     # Check for saved run
     save_data = load_game()
     if save_data:
@@ -796,7 +807,14 @@ def main():
 
         from core.ui import draw_notebook_bg, draw_ink_splotches, draw_time_icon, draw_trophy_sketches, draw_ritual_smoke
         time_now = player.get_time_of_day()
-        draw_notebook_bg(screen, time_now, player.ancestral_art, blood_intensity, player.turn, weather_active, player.chronic_entries, font_small)
+        # Detección de cambio de mensaje para efecto Ink Soak y Sonido
+        if current_message != prev_message:
+            current_message_timer = pygame.time.get_ticks()
+            prev_message = current_message
+            if paper_sound: paper_sound.play()
+
+        # Render Fondo Premium (Inyectando descubrimientos para los márgenes)
+        draw_notebook_bg(screen, time_now, player.ancestral_art, blood_intensity, player.turn, weather_active, player.chronic_entries, font_small, list(player.discovered_concepts))
         # Capas de Humo Ritual si hay buffs activos
         if player.active_buffs:
             draw_ritual_smoke(screen, player.turn)
@@ -900,7 +918,11 @@ def main():
             screen.blit(sick_surf, (50, 400))
 
         if player.alive:
-            draw_text_box(screen, current_message, 100, 430, 630, 120, font_small)
+            # Cálculo de Alpha para efecto de Tinta (1 sec duration)
+            msg_elapsed = pygame.time.get_ticks() - current_message_timer
+            msg_alpha = min(255, int(msg_elapsed / 4)) # Sube de 0 a 255 en 1000ms
+            
+            draw_text_box(screen, current_message, 100, 430, 630, 120, font_small, alpha=msg_alpha)
             if game_state == "MAP":
                 btn_search.draw(screen)
                 btn_rest.draw(screen)
