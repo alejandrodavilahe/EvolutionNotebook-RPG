@@ -129,21 +129,21 @@ def main():
     current_enemy = None
 
     # Instanciacion de botones Map
-    btn_search = Button(50, 555, 220, 50, "Buscar / Explorar", font_main, BTN_COLOR, TEXT_COLOR, BTN_HOVER)
-    btn_rest = Button(280, 555, 220, 50, "Descansar", font_main, BTN_COLOR, TEXT_COLOR, BTN_HOVER)
-    btn_craft = Button(510, 555, 220, 50, "Crafteo / Ideas", font_main, (210, 230, 210), TEXT_COLOR, (190, 210, 190))
+    btn_search = Button(110, 555, 220, 50, "Buscar / Explorar", font_main, BTN_COLOR, TEXT_COLOR, BTN_HOVER)
+    btn_rest = Button(340, 555, 220, 50, "Descansar", font_main, BTN_COLOR, TEXT_COLOR, BTN_HOVER)
+    btn_craft = Button(570, 555, 120, 50, "Crafteo", font_main, (210, 230, 210), TEXT_COLOR, (190, 210, 190))
     
-    btn_equip = Button(50, 615, 220, 50, "🎒 Equipo", font_main, (200, 220, 240), TEXT_COLOR, (180, 200, 220))
-    btn_tribe = Button(280, 615, 220, 50, "Manejar Tribu", font_main, (240, 230, 180), TEXT_COLOR, (220, 210, 160))
-    btn_camp = Button(510, 615, 220, 50, "⛺ Campamento", font_main, (240, 230, 180), TEXT_COLOR, (220, 210, 160))
+    btn_equip = Button(110, 615, 220, 50, "🎒 Equipo", font_main, (200, 220, 240), TEXT_COLOR, (180, 200, 220))
+    btn_tribe = Button(340, 615, 220, 50, "Manejar Tribu", font_main, (240, 230, 180), TEXT_COLOR, (220, 210, 160))
+    btn_camp = Button(570, 615, 120, 50, "⛺ Base", font_main, (240, 230, 180), TEXT_COLOR, (220, 210, 160))
     
-    btn_craft_mix = Button(510, 555, 220, 50, "Mezclar Ítems", font_small, (200, 150, 150), TEXT_COLOR, (180, 130, 130))
-    btn_craft_cancel = Button(510, 615, 220, 50, "Cancelar", font_small, (150, 150, 150), TEXT_COLOR, (130, 130, 130))
+    btn_craft_mix = Button(570, 555, 120, 50, "Mezclar", font_small, (200, 150, 150), TEXT_COLOR, (180, 130, 130))
+    btn_craft_cancel = Button(570, 615, 120, 50, "Salir", font_small, (150, 150, 150), TEXT_COLOR, (130, 130, 130))
 
-    btn_fight_atk = Button(50, 555, 220, 50, "Atacar", font_main, (210, 100, 100), TEXT_COLOR, (190, 80, 80))
-    btn_shoot = Button(280, 555, 220, 50, "Disparar Arco", font_main, (140, 180, 140), TEXT_COLOR, (120, 160, 120))
-    btn_fight_def = Button(510, 555, 220, 50, "Cubrirse", font_main, (140, 160, 220), TEXT_COLOR, (120, 140, 200))
-    btn_flee = Button(50, 615, 220, 50, "Huir (-Ene)", font_main, (180, 180, 150), TEXT_COLOR, (160, 160, 130))
+    btn_fight_atk = Button(110, 555, 220, 50, "Atacar", font_main, (210, 100, 100), TEXT_COLOR, (190, 80, 80))
+    btn_shoot = Button(340, 555, 220, 50, "Arco", font_main, (140, 180, 140), TEXT_COLOR, (120, 160, 120))
+    btn_fight_def = Button(570, 555, 120, 50, "Cubrir", font_main, (140, 160, 220), TEXT_COLOR, (120, 140, 200))
+    btn_flee = Button(110, 615, 220, 50, "Huir", font_main, (180, 180, 150), TEXT_COLOR, (160, 160, 130))
 
     btn_travel = Button(50, 555, 330, 50, "Avanzar a la Zona", font_main, (160, 200, 160), TEXT_COLOR, (140, 180, 140))
     btn_ignore = Button(400, 555, 330, 50, "Ignorar / Seguir", font_main, (200, 180, 160), TEXT_COLOR, (180, 160, 140))
@@ -798,25 +798,23 @@ def main():
         from core.ui import draw_notebook_bg, draw_ink_splotches, draw_time_icon, draw_trophy_sketches, draw_ritual_smoke
         time_now = player.get_time_of_day()
         draw_notebook_bg(screen, time_now, player.ancestral_art, blood_intensity, player.turn, weather_active, player.chronic_entries, font_small)
-        
         # Capas de Humo Ritual si hay buffs activos
         if player.active_buffs:
             draw_ritual_smoke(screen, player.turn)
             
         draw_ink_splotches(screen, player.turn + player.generation)
         draw_trophy_sketches(screen, player.trophies)
-        
         from core.ui import draw_hallucinations, draw_character_profile
         draw_hallucinations(screen, player.sanity, player.turn)
-        draw_character_profile(screen, player, 800, 100) # Lado derecho, arriba de stats
+        draw_character_profile(screen, player, 750, 30) # Sidebar Top
         
-        draw_time_icon(screen, 30, 20, time_now, font_main)
+        draw_time_icon(screen, 110, 20, time_now, font_main)
         if player.torch_uses > 0 and time_now == "Noche":
             torch_txt = font_small.render(f"🔥 Antorcha: {player.torch_uses}t", True, (255, 150, 0))
-            screen.blit(torch_txt, (30, 60))
+            screen.blit(torch_txt, (280, 20))
             
         # Draw Active Buffs
-        bx, by = 600, 420
+        bx, by = 750, 200
         for b in player.active_buffs:
             b_txt = font_small.render(f"✨ {b['name']}: {b['timer']}t", True, (100, 255, 150))
             screen.blit(b_txt, (bx, by))
@@ -824,7 +822,7 @@ def main():
         
         # Superposición de la matriz minimapa (Ajustado por el lomo de cuero)
         if game_state in ["MAP", "ENCOUNTER", "DECISION", "OPPORTUNITY"]:
-            draw_minimap(screen, world, player, font_main, font_small, 75 + shake_offset_x, 120 + shake_offset_y, 230)
+            draw_minimap(screen, world, player, font_main, font_small, 110 + shake_offset_x, 180 + shake_offset_y, 200)
 
         def take_enemy_hit(self, enemy_name, dmg_raw, multiplier=1.0):
             # Wrapper local para main para trigger de sangre visual
@@ -844,10 +842,10 @@ def main():
         # Puntaje de Descubrimiento
         disc_surf = font_main.render(f"Puntaje Descubrimiento: {len(player.discovered_concepts) * 10}", True, (200, 200, 50))
         
-        screen.blit(title_surf, (30, 20))
-        screen.blit(loc_surf, (30, 50))
-        screen.blit(turn_surf, (30, 80))
-        screen.blit(disc_surf, (30, 110))
+        screen.blit(title_surf, (110, 50))
+        screen.blit(loc_surf, (110, 80))
+        screen.blit(turn_surf, (110, 110))
+        screen.blit(disc_surf, (110, 140))
 
         # El dibujo central del jugador ahora es manejado por draw_character_profile (llamado arriba)
         # pero podemos dejar una version "sketchy" central si el usuario prefiere
@@ -856,56 +854,26 @@ def main():
         # Render Seguidores Visual
         if player.follower:
             f_color = (100, 100, 110)
-            fx, fy = 810, 250
+            fx, fy = 780, 200
             pygame.draw.circle(screen, f_color, (fx, fy), 10, width=1) # Cabeza mascota
             pygame.draw.line(screen, f_color, (fx, fy+10), (fx-10, fy+25), 1) 
             pygame.draw.line(screen, f_color, (fx, fy+10), (fx+10, fy+25), 1)
             f_name = font_small.render(f"🐾 {player.follower['species']}", True, f_color)
-            screen.blit(f_name, (fx - 20, fy - 20))
+            screen.blit(f_name, (fx + 20, fy - 10))
         
-        # Superposicion de piezas modulares del RPG Equipment System
-        bg_eq = player.equipment.get("Body")
-        if bg_eq == "Peto Escamoso":
-            pygame.draw.polygon(screen, (80, 140, 90), [(center_x-15, center_y+40), (center_x+15, center_y+40), (center_x+10, center_y+90), (center_x-10, center_y+90)])
-        elif bg_eq == "Abrigo Básico" or bg_eq == "Abrigo de Invierno":
-            pygame.draw.polygon(screen, (130, 90, 60), [(center_x-18, center_y+30), (center_x+18, center_y+30), (center_x+25, center_y+110), (center_x-25, center_y+110)])
-            
-        hd_eq = player.equipment.get("Head")
-        if hd_eq == "Casco de Hueso":
-            pygame.draw.arc(screen, (240, 240, 230), [center_x-35, center_y-35, 70, 70], 0, 3.14, 5) # Medio circulo superior extra
-            
-        bt_eq = player.equipment.get("Boots")
-        if bt_eq == "Botas de Piel":
-            pygame.draw.rect(screen, (100, 60, 40), (center_x-25, center_y+140, 15, 15))
-            pygame.draw.rect(screen, (100, 60, 40), (center_x+10, center_y+140, 15, 15))
-            
-        wp_eq = player.equipment.get("Weapon")
-        if wp_eq == "Lanza de Obsidiana" or wp_eq == "Lanza Caza":
-            color_L = (40, 40, 40) if wp_eq == "Lanza de Obsidiana" else (200, 150, 100)
-            pygame.draw.line(screen, color_L, (center_x + 20, center_y + 110), (center_x + 50, center_y - 20), 6) # Larga lanza
-            pygame.draw.circle(screen, (200, 50, 50) if wp_eq == "Lanza de Obsidiana" else (220, 220, 200), (center_x + 52, center_y - 25), 5) # Punta
-        elif wp_eq == "Hacha Primitiva" or wp_eq == "Pico de Hueso":
-            pygame.draw.line(screen, (130, 90, 50), (center_x + 30, center_y + 80), (center_x + 30, center_y + 30), 5) # Mango
-            pygame.draw.line(screen, (220, 220, 220), (center_x + 20, center_y + 30), (center_x + 40, center_y + 30), 8) # Cabezal
-        elif wp_eq == "Cuchillo de Pedernal" or wp_eq == "Cuchillo Óseo":
-            pygame.draw.line(screen, (180, 180, 170), (center_x + 30, center_y + 80), (center_x + 35, center_y + 60), 4)
-        elif wp_eq == "Lanza de Piedra":
-            pygame.draw.line(screen, (120, 100, 80), (center_x + 20, center_y + 110), (center_x + 45, center_y - 10), 5) # Mango
-            pygame.draw.polygon(screen, (100, 100, 100), [(center_x + 43, center_y - 10), (center_x + 50, center_y - 20), (center_x + 38, center_y - 15)]) # Punta piedra
-        elif wp_eq == "Antorcha":
-            pygame.draw.line(screen, (100, 70, 40), (center_x + 30, center_y + 80), (center_x + 40, center_y + 40), 6) # Palo
-            pygame.draw.circle(screen, (255, 150, 50), (center_x + 42, center_y + 35), 8) # Fuego
+        # Eliminamos el dibujo central redundante para limpiar la 'página'
+        pass
 
-        # Renderizado de Estadísticas a un lado
+        # Renderizado de Estadísticas Sidebar Mid
         stats_x = 740
-        draw_bar(screen, stats_x, 150, 220, 20, player.hp, player.max_hp, BAR_COLORS["hp"], "Vida", font_small)
-        draw_bar(screen, stats_x, 210, 220, 20, player.hunger, player.max_hunger, BAR_COLORS["hunger"], "Hambre (Comida)", font_small)
-        draw_bar(screen, stats_x, 270, 220, 20, player.thirst, player.max_thirst, BAR_COLORS["thirst"], "Sed (Agua)", font_small)
-        draw_bar(screen, stats_x, 330, 220, 20, player.energy, player.max_energy, BAR_COLORS["energy"], "Energía", font_small)
+        draw_bar(screen, stats_x, 220, 220, 15, player.hp, player.max_hp, BAR_COLORS["hp"], "Vida", font_small)
+        draw_bar(screen, stats_x, 260, 220, 15, player.hunger, player.max_hunger, BAR_COLORS["hunger"], "Hambre (Comida)", font_small)
+        draw_bar(screen, stats_x, 300, 220, 15, player.thirst, player.max_thirst, BAR_COLORS["thirst"], "Sed (Agua)", font_small)
+        draw_bar(screen, stats_x, 340, 220, 15, player.energy, player.max_energy, BAR_COLORS["energy"], "Energía", font_small)
         
         # UI Sanity Dinámica
-        if player.era > 1 or player.sanity < 90:
-            draw_bar(screen, stats_x, 390, 220, 20, player.sanity, player.max_sanity, BAR_COLORS["sanity"], "Sanidad", font_small)
+        if player.era > 1 or player.sanity < 95:
+            draw_bar(screen, stats_x, 380, 220, 15, player.sanity, player.max_sanity, BAR_COLORS["sanity"], "Sanidad", font_small)
             
         # Draw weather particles (overlay)
         for p in weather_particles:
@@ -921,9 +889,8 @@ def main():
             else:
                 pygame.draw.circle(screen, p["color"], (int(p["x"]), int(p["y"])), 3)
 
-        # Renderizado interactivo y sub-paneles
-        # UI global que siempre se ve
-        inv_slots = draw_inventory(screen, 740, 400, 240, 250, player.inventory, font_small, font_main)
+        # Renderizado interactivo y sub-paneles Sidebar Bottom
+        inv_slots = draw_inventory(screen, 740, 430, 240, 250, player.inventory, font_small, font_main)
 
         # Etiqueta visual para climas/estados especiales
         if weather_active:
@@ -934,7 +901,7 @@ def main():
             screen.blit(sick_surf, (50, 400))
 
         if player.alive:
-            draw_text_box(screen, current_message, 50, 430, 680, 120, font_small)
+            draw_text_box(screen, current_message, 100, 430, 630, 120, font_small)
             if game_state == "MAP":
                 btn_search.draw(screen)
                 btn_rest.draw(screen)

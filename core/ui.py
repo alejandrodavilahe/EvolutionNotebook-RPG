@@ -292,24 +292,38 @@ def draw_character_profile(surface, player, x, y):
     # Equipo Visible
     weapon = player.equipment.get("Weapon")
     if weapon and weapon != "Puños":
-        # Dibujar lanza o cuchillo en la mano (x+20, y+75 aprox)
-        pygame.draw.line(surface, (100, 70, 40), (x+15, y+60), (x+10, y+110), 2) # Palo
-        pygame.draw.polygon(surface, (150, 150, 160), [(x+15, y+50), (x+10, y+65), (x+20, y+65)], 0) # Punta
+        # Dibujar mango
+        color_w = (40, 40, 40) if "Obsidiana" in weapon else (130, 90, 60)
+        pygame.draw.line(surface, color_w, (x+15, y+60), (x+10, y+110), 3) # Palo
+        # Punta
+        tip_color = (30, 30, 30) if "Obsidiana" in weapon else (220, 220, 210)
+        pygame.draw.polygon(surface, tip_color, [(x+15, y+50), (x+8, y+68), (x+22, y+68)], 0)
 
     body_gear = player.equipment.get("Body")
     if body_gear and body_gear != "Nada":
         # Dibujar túnica/peto
-        pygame.draw.rect(surface, (120, 90, 70), (x+30, y+45, 20, 45), 1)
+        pygame.draw.rect(surface, (120, 90, 70), (x+25, y+45, 30, 50), 1)
         if "Escamoso" in body_gear:
-            for i in range(3):
-                pygame.draw.line(surface, (120, 90, 70), (x+30, y+50+i*10), (x+50, y+55+i*10), 1)
+            for i in range(4):
+                pygame.draw.line(surface, (100, 120, 100), (x+25, y+50+i*10), (x+55, y+55+i*10), 2)
+        elif "Invierno" in body_gear:
+            pygame.draw.rect(surface, (140, 130, 120), (x+22, y+42, 36, 56), 2) # Mas grueso
+
+    head_gear = player.equipment.get("Head")
+    if head_gear == "Casco de Hueso":
+        pygame.draw.arc(surface, (240, 240, 230), [x+28, y+15, 24, 24], 0, 3.14, 3)
+
+    boots_gear = player.equipment.get("Boots")
+    if boots_gear == "Botas de Piel":
+        pygame.draw.rect(surface, (90, 60, 40), (x+25, y+135, 12, 12))
+        pygame.draw.rect(surface, (90, 60, 40), (x+45, y+135, 12, 12))
 
     # Feedback de Estado (Heridas)
     if player.hp < player.max_hp * 0.5:
         # Tachones de sangre (tinta roja)
         for _ in range(3):
-            rx = x + 30 + (player.turn % 10)
-            ry = y + 50 + (player.turn % 20)
+            rx = x + 30 + (player.turn % 15)
+            ry = y + 50 + (player.turn % 25)
             pygame.draw.line(surface, (180, 50, 50), (rx, ry), (rx+15, ry+5), 2)
 
 def draw_blood_splatters(surface, blood_intensity, turn_seed):
