@@ -154,6 +154,9 @@ def draw_minimap(surface, world_obj, player, font_main, font_small, x, y, map_px
                 if cell["icon"] and not cell["searched"]:
                     icon_surf = font_small.render(cell["icon"], True, (200, 200, 200))
                     surface.blit(icon_surf, (cx + 2, cy + 2))
+                
+                if cell.get("has_plot"):
+                    pygame.draw.circle(surface, (100, 255, 100), (cx + cell_px//2, cy + cell_px//2), 2)
                     
     # Draw Player Avatar/Dot on Map
     p_rect = (x + px * cell_px + cell_px//2, y + py * cell_px + cell_px//2)

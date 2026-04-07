@@ -75,6 +75,10 @@ def main():
 
     btn_opp_take = Button(50, 555, 330, 50, "Aprovechar (-Ene)", font_main, (210, 200, 120), TEXT_COLOR, (190, 180, 100))
     
+    btn_tame = Button(50, 615, 220, 50, "🐾 Domesticar", font_main, (180, 240, 180), TEXT_COLOR, (160, 220, 160))
+    btn_plant = Button(50, 500, 220, 40, "🌱 Plantar Huerto", font_small, (180, 220, 180), TEXT_COLOR, (160, 200, 160))
+    btn_harvest = Button(280, 500, 220, 40, "🧺 Cosechar", font_small, (220, 220, 150), TEXT_COLOR, (200, 200, 130))
+    
     btn_drink_clean = Button(350, 280, 190, 25, "Beber Agua Pura", font_small, (100, 160, 220), TEXT_COLOR, (80, 140, 200))
     btn_drink_dirty = Button(350, 310, 190, 25, "Beber A. Turbia", font_small, (150, 160, 130), TEXT_COLOR, (130, 140, 110))
     btn_boil = Button(350, 340, 190, 25, "🔥 Hervir Líquido", font_small, (220, 140, 100), TEXT_COLOR, (200, 120, 80))
@@ -148,6 +152,8 @@ def main():
                             current_message = "Buscaste exhaustivamente pero no encontraste nada útil."
                         elif evt["type"] == "resource":
                             player.heal_stat(evt["data"]["stat"], evt["data"]["amount"])
+                            floating_texts.append({"text": f"+{evt['data']['amount']}", "x": 500, "y": 300, "color": (100, 255, 100), "life": 60})
+                            for _ in range(5): particles.append({"x": 500, "y": 450, "vx": random.uniform(-2,2), "vy": random.uniform(-4,-1), "color": (100, 255, 100), "life": 30})
                             if "item" in evt["data"]:
                                 player.add_to_inventory(evt["data"]["item"], evt["data"]["item_amt"])
                             if "herb" in evt["data"] and evt["data"]["herb_amt"] > 0:
@@ -316,6 +322,18 @@ def main():
                                 for _ in range(12): particles.append({"x": 500, "y": 300, "vx": random.uniform(-5, 5), "vy": random.uniform(-5, 5), "color": (250, 0, 0), "life": 40})
                             if player.alive:
                                 current_message = f"Hiciste {player.base_dmg} de daño. ¡El {en_name} sangra pero sobrevive! Te embiste por {recibido} de daño."
+                                
+                    if player.inventory.get("Correa de Cuero", 0) > 0 and current_enemy["hp"] < current_enemy.get("max_hp", 100) * 0.4:
+                        if btn_tame.handle_event(event):
+                            en_name = current_enemy["name"]
+                            tamables = ["Perro Salvaje", "Lobo", "Zorro", "Lince", "Búfalo Solitario"]
+                            if en_name in tamables:
+                                player.inventory["Correa de Cuero"] -= 1
+                                player.follower = {"species": en_name}
+                                current_message = f"¡HAS DOMESTICADO AL {en_name.upper()}! Ahora te sigue fielmente."
+                                game_state = "MAP"
+                            else:
+                                current_message = f"El {en_name} es demasiado salvaje para ser domesticado."
                                 
                     if btn_fight_def.handle_event(event):
                         en_name = current_enemy["name"]
@@ -533,6 +551,20 @@ def main():
                         weather_pending_time = random.randint(ev["min_t"], ev["max_t"])
                         w_msg += f"\n⚠️ {ev['warning']}"
             
+            # Crecimiento de Huertos
+            for row in world.grid:
+                for cell in row:
+                    if cell.get("has_plot"):
+                        cell["plot_growth"] = min(100, cell["plot_growth"] + 10)
+                        
+            # Produccion de Seguidores (Buffalo/Vaca)
+            if player.follower and player.follower["species"] == "Búfalo Solitario":
+                player.follower_timer += 1
+                if player.follower_timer >= 10:
+                    player.follower_timer = 0
+                    player.add_to_inventory("Carne Asada", 1)
+                    w_msg += "\n[Tu Búfalo encontró algo de sustento para ti: +1 Carne Asada]"
+            
             sick_msg = player.check_disease_damage()
             if sick_msg:
                 w_msg += f"\n{sick_msg}"
@@ -583,6 +615,17 @@ def main():
         pygame.draw.line(screen, base_color, (center_x, center_y + 50), (center_x + 30, center_y + 80), 3) # Brazo der
         pygame.draw.line(screen, base_color, (center_x, center_y + 100), (center_x - 20, center_y + 150), 3) # Pierna izq
         pygame.draw.line(screen, base_color, (center_x, center_y + 100), (center_x + 20, center_y + 150), 3) # Pierna der
+        
+        # Render Seguidores Visual
+        if player.follower:
+            f_color = (150, 150, 150)
+            fx, fy = center_x - 70, center_y + 40
+            pygame.draw.circle(screen, f_color, (fx, fy), 15, width=2) # Cabeza mascota
+            pygame.draw.line(screen, f_color, (fx, fy+15), (fx, fy+40), 2) # Cuerpo mascota
+            pygame.draw.line(screen, f_color, (fx, fy+40), (fx-10, fy+55), 2) # Patas
+            pygame.draw.line(screen, f_color, (fx, fy+40), (fx+10, fy+55), 2)
+            f_name = font_small.render(player.follower["species"], True, f_color)
+            screen.blit(f_name, (fx - 30, fy - 25))
         
         # Superposicion de piezas modulares del RPG Equipment System
         bg_eq = player.equipment.get("Body")
@@ -644,6 +687,26 @@ def main():
                         btn_drink_dirty.draw(screen)
                 if world.camp_level > 0 and player.inventory.get("Agua Turbia", 0) > 0:
                         btn_boil.draw(screen)
+                        
+                cell = world.grid[world.player_y][world.player_x]
+                if not cell["has_plot"] and world.has_camp and player.inventory.get("Huerto de Piedra", 0) > 0:
+                    btn_plant.draw(screen)
+                    if btn_plant.handle_event(event):
+                        player.inventory["Huerto de Piedra"] -= 1
+                        cell["has_plot"] = True
+                        cell["plot_growth"] = 0
+                        current_message = "Has preparado la tierra y rodeado el área con piedras. El cultivo ha comenzado."
+                
+                if cell["has_plot"] and cell["plot_growth"] >= 100:
+                    btn_harvest.draw(screen)
+                    if btn_harvest.handle_event(event):
+                        cell["plot_growth"] = 0
+                        yield_amt = random.randint(3, 8)
+                        player.add_to_inventory("Carne Asada", yield_amt // 2) # Representa vegetales nutritivos
+                        player.add_to_inventory("Fibra", yield_amt)
+                        current_message = f"¡Cosecha exitosa! Obtuviste nutrientes y fibras del huerto."
+                        # Particulas de cosecha
+                        for _ in range(15): particles.append({"x": 400, "y": 430, "vx": random.uniform(-3,3), "vy": random.uniform(-6,-2), "color": (100, 200, 100), "life": 40})
                     
                 if not world.has_camp:
                     btn_camp.text = "⛺ Campamento"

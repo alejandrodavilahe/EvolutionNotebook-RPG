@@ -183,13 +183,15 @@ class World:
                     special = "Enemigo Fuerte"
                     cell_icon = "☠️"
                     
-                row.append({"type": cell_type, "icon": cell_icon, "searched": False, "special": special})
+                row.append({"type": cell_type, "icon": cell_icon, "searched": False, "special": special, "has_plot": False, "plot_growth": 0})
             self.grid.append(row)
             
         # Clear spawn point
         self.grid[self.player_y][self.player_x]["type"] = "Llanura"
         self.grid[self.player_y][self.player_x]["icon"] = "⛺"
         self.grid[self.player_y][self.player_x]["searched"] = True
+        self.grid[self.player_y][self.player_x]["has_plot"] = False
+        self.grid[self.player_y][self.player_x]["plot_growth"] = 0
         
     def get_weather_events(self):
         return WEATHER_EVENTS.get(self.current_biome, [])

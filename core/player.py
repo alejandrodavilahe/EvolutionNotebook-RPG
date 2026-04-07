@@ -24,7 +24,9 @@ RECIPES = {
     "Infusión de Eucalipto": {"Eucalipto": 1, "Fibra": 1}, 
     "Pasta Disentería": {"Ajenjo": 1, "Milenrama": 1},
     "Té de Caléndula": {"Caléndula": 2}, 
-    "Ungüento Térmico": {"Musgo de Reno": 1, "Grasa": 1}
+    "Ungüento Térmico": {"Musgo de Reno": 1, "Grasa": 1},
+    "Correa de Cuero": {"Piel": 2, "Fibra": 2},
+    "Huerto de Piedra": {"Pedernal": 4, "Fibra": 3}
 }
 
 class Player:
@@ -45,6 +47,8 @@ class Player:
         self.equipment = {"Head": None, "Body": None, "Boots": None, "Weapon": None, "Offhand": None}
         self.traps_active = 0
         self.tribute_timer = 0
+        self.follower = None # {"species": "Perro", "bonus_type": "DMG", "bonus_val": 5}
+        self.follower_timer = 0 # Para produccion de recursos (Buffalo)
         
         # Meta-roguelite
         import json, os
@@ -120,6 +124,16 @@ class Player:
         
         boots = self.equipment["Boots"]
         if boots == "Botas de Piel": self.defense += 3
+            
+        # Seguidores (Followers)
+        if self.follower:
+            sp = self.follower["species"]
+            if sp == "Perro Salvaje": self.base_dmg += 5
+            elif sp == "Lobo": self.defense += 10
+            elif sp == "Zorro": 
+                self.max_hunger += 20
+                self.max_thirst += 20
+            elif sp == "Lince": self.search_efficiency += 0.5
 
     def pass_turn(self, action_cost={"hunger": 5, "thirst": 5, "energy": 5}):
         self.update_stats_from_gear()
@@ -259,6 +273,14 @@ class Player:
             if item_name == "Mochila de Cuero":
                 self.max_energy = 150
             return "(Obtuviste la pieza físicamente. Ve a 'Modificar Set y Armas' para equiparla y usarla)"
+
+        if item_name == "Correa de Cuero":
+            self.inventory["Correa de Cuero"] = self.inventory.get("Correa de Cuero", 0) + 1
+            return "(Herramienta de domesticación lista)"
+        
+        if item_name == "Huerto de Piedra":
+            # Esto se manejaría en el main para colocarlo en la grid
+            return "HUERTO_READY"
 
         if item_name == "Trampa de Lazo":
             self.traps_active += 1
